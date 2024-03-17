@@ -1,32 +1,19 @@
 {
-  "author": "Microsoft Corporation",
+  "name": "vscode-json-languageservice",
+  "version": "5.3.9",
+  "description": "Language service for JSON",
   "bugs": {
     "url": "https://github.com/Microsoft/vscode-json-languageservice"
   },
-  "dependencies": {
-    "@vscode/l10n": "0.0.18",
-    "jsonc-parser": "3.2.1",
-    "vscode-languageserver-textdocument": "1.0.11",
-    "vscode-languageserver-types": "3.17.5",
-    "vscode-uri": "3.0.8"
-  },
-  "description": "Language service for JSON",
-  "devDependencies": {
-    "@types/mocha": "10.0.6",
-    "@types/node": "16.x",
-    "json-schema-test-suite": "https://github.com/json-schema-org/JSON-Schema-Test-Suite.git#69acf52990b004240839ae19b4bec8fb01d50876",
-    "mocha": "10.2.0",
-    "rimraf": "5.0.5",
-    "typescript": "5.3.3"
-  },
-  "license": "MIT",
-  "main": "./lib/umd/jsonLanguageService.js",
-  "module": "./lib/esm/jsonLanguageService.js",
-  "name": "vscode-json-languageservice",
   "repository": {
     "type": "git",
     "url": "https://github.com/Microsoft/vscode-json-languageservice"
   },
+  "license": "MIT",
+  "author": "Microsoft Corporation",
+  "main": "./lib/umd/jsonLanguageService.js",
+  "module": "./lib/esm/jsonLanguageService.js",
+  "typings": "./lib/umd/jsonLanguageService",
   "scripts": {
     "clean": "rimraf lib",
     "compile": "tsc -p ./src",
@@ -38,6 +25,19 @@
     "sample": "npm run compile && node ./lib/umd/example/sample.js",
     "watch": "tsc -w -p ./src"
   },
-  "typings": "./lib/umd/jsonLanguageService",
-  "version": "5.3.9"
+  "dependencies": {
+    "@vscode/l10n": "0.0.18",
+    "jsonc-parser": "3.2.1",
+    "vscode-languageserver-textdocument": "1.0.11",
+    "vscode-languageserver-types": "3.17.5",
+    "vscode-uri": "3.0.8"
+  },
+  "devDependencies": {
+    "@types/mocha": "10.0.6",
+    "@types/node": "16.x",
+    "json-schema-test-suite": "https://github.com/json-schema-org/JSON-Schema-Test-Suite.git#69acf52990b004240839ae19b4bec8fb01d50876",
+    "mocha": "10.2.0",
+    "rimraf": "5.0.5",
+    "typescript": "5.3.3"
+  }
 }
