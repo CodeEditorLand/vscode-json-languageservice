@@ -3,51 +3,48 @@
 	"version": "0.0.1",
 	"private": false,
 	"description": "Language service for JSON",
-	"homepage": "https://github.com/CodeEditorLand/Foundation#readme",
+	"keywords": [
+		"land"
+	],
+	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/LandJSonLanguageService#readme",
 	"bugs": {
-		"url": "https://github.com/CodeEditorLand/Foundation/issues"
+		"url": "HTTPS://GitHub.Com/CodeEditorLand/LandJSonLanguageService/issues"
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/CodeEditorLand/Foundation.git"
+		"url": "git+HTTPS://github.com/CodeEditorLand/LandJSonLanguageService.git"
 	},
 	"license": "SEE LICENSE IN LICENSE",
 	"author": {
-		"name": "Playform",
-		"email": "Hello@Playform.Cloud",
-		"url": "https://playform.cloud"
+		"name": "🌆 — Land —",
+		"email": "Land@PlayForm.Cloud",
+		"url": "HTTPS://Land.PlayForm.Cloud"
 	},
 	"type": "module",
 	"main": "./lib/umd/jsonLanguageService.js",
 	"module": "./lib/esm/jsonLanguageService.js",
 	"typings": "./lib/umd/jsonLanguageService",
 	"scripts": {
+		"Document": "Document 'Source/**/*.ts'",
 		"clean": "rimraf lib",
 		"compile": "tsc -p ./src",
 		"compile-esm": "tsc -p ./src/tsconfig.esm.json",
 		"coverage": "npx nyc -r lcov npm run test",
 		"install-types-next": "npm install vscode-languageserver-types@next -f -S && npm install vscode-languageserver-textdocument@next -f -S",
 		"prepack": "npm run clean && npm run compile-esm && npm run test && npm run remove-sourcemap-refs",
-		"prepublishOnly": "TypeScriptESBuild 'Source/**/*.ts'",
+		"prepublishOnly": "Build 'Source/**/*.ts'",
 		"remove-sourcemap-refs": "node ./build/remove-sourcemap-refs.js",
-		"sample": "npm run compile && node ./lib/umd/example/sample.js",
-		"watch": "tsc -w -p ./src"
+		"sample": "npm run compile && node ./lib/umd/example/sample.js"
 	},
 	"dependencies": {
-		"@vscode/l10n": "0.0.18",
-		"jsonc-parser": "3.2.1",
-		"vscode-languageserver-textdocument": "1.0.11",
-		"vscode-languageserver-types": "3.17.5",
-		"vscode-uri": "3.0.8"
+		"jsonc-parser": "3.2.1"
 	},
 	"devDependencies": {
-		"@types/mocha": "10.0.6",
+		"@playform/build": "0.0.7",
+		"@playform/document": "0.0.6",
 		"@types/node": "20.x",
 		"json-schema-test-suite": "https://github.com/json-schema-org/JSON-Schema-Test-Suite.git#69acf52990b004240839ae19b4bec8fb01d50876",
-		"mocha": "10.3.0",
-		"rimraf": "5.0.5",
-		"typescript": "5.4.2",
-		"typescript-esbuild": "0.4.5"
+		"rimraf": "5.0.5"
 	},
 	"publishConfig": {
 		"access": "public"
