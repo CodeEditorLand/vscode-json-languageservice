@@ -1,26 +1,6 @@
 {
 	"name": "vscode-json-languageservice",
-	"version": "0.0.1",
-	"private": false,
 	"description": "Language service for JSON",
-	"keywords": [
-		"land"
-	],
-	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/LandJSonLanguageService#readme",
-	"bugs": {
-		"url": "HTTPS://GitHub.Com/CodeEditorLand/LandJSonLanguageService/issues"
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+HTTPS://github.com/CodeEditorLand/LandJSonLanguageService.git"
-	},
-	"license": "SEE LICENSE IN LICENSE",
-	"author": {
-		"name": "🛬 Land —",
-		"email": "Land@PlayForm.Cloud",
-		"url": "HTTPS://Land.PlayForm.Cloud"
-	},
-	"type": "module",
 	"main": "./lib/umd/jsonLanguageService.js",
 	"module": "./lib/esm/jsonLanguageService.js",
 	"typings": "./lib/umd/jsonLanguageService",
@@ -41,12 +21,8 @@
 	},
 	"devDependencies": {
 		"@playform/build": "0.0.7",
-		"@playform/document": "0.0.6",
 		"@types/node": "20.x",
 		"json-schema-test-suite": "https://github.com/json-schema-org/JSON-Schema-Test-Suite.git#69acf52990b004240839ae19b4bec8fb01d50876",
 		"rimraf": "5.0.5"
-	},
-	"publishConfig": {
-		"access": "public"
 	}
 }
