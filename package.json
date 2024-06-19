@@ -15,22 +15,22 @@
     "url": "https://github.com/Microsoft/vscode-json-languageservice"
   },
   "devDependencies": {
-    "@types/mocha": "10.0.6",
-    "@types/node": "20.x",
-    "@typescript-eslint/eslint-plugin": "7.13.1",
-    "@typescript-eslint/parser": "7.13.1",
-    "eslint": "9.5.0",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "16.x",
+    "@typescript-eslint/eslint-plugin": "^7.7.0",
+    "@typescript-eslint/parser": "^7.7.0",
+    "eslint": "^8.57.0",
     "json-schema-test-suite": "https://github.com/json-schema-org/JSON-Schema-Test-Suite.git#69acf52990b004240839ae19b4bec8fb01d50876",
-    "mocha": "10.4.0",
-    "rimraf": "5.0.7",
-    "typescript": "5.4.5"
+    "mocha": "^10.4.0",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.4.5"
   },
   "dependencies": {
-    "jsonc-parser": "3.2.1",
-    "vscode-languageserver-textdocument": "1.0.11",
-    "vscode-languageserver-types": "3.17.5",
-    "vscode-uri": "3.0.8",
-    "@vscode/l10n": "0.0.18"
+    "jsonc-parser": "^3.2.1",
+    "vscode-languageserver-textdocument": "^1.0.11",
+    "vscode-languageserver-types": "^3.17.5",
+    "vscode-uri": "^3.0.8",
+    "@vscode/l10n": "^0.0.18"
   },
   "scripts": {
     "prepack": "npm run clean && npm run compile-esm && npm run test && npm run remove-sourcemap-refs",
