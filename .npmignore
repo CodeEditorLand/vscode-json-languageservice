@@ -1,0 +1,14 @@
+.vscode/
+.github/
+build/
+lib/**/test/
+lib/**/example/
+lib/**/*.js.map
+lib/*/*/*.d.ts
+src/
+test/
+.gitignore
+.travis.yml
+.eslintrc.json
+gulpfile.js
+.mocharc.json
