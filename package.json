@@ -15,11 +15,11 @@
 		"sample": "npm run compile && node ./lib/umd/example/sample.js"
 	},
 	"dependencies": {
-		"jsonc-parser": "^3.3.0"
+		"jsonc-parser": "3.3.1"
 	},
 	"devDependencies": {
-		"@types/node": "18.x",
+		"@types/node": "20.x",
 		"json-schema-test-suite": "https://github.com/json-schema-org/JSON-Schema-Test-Suite.git#69acf52990b004240839ae19b4bec8fb01d50876",
-		"rimraf": "^5.0.7"
+		"rimraf": "6.0.1"
 	}
 }
