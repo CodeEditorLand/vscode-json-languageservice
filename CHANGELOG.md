@@ -28,7 +28,8 @@
 -   Update to `vscode-languageserver-types@3.17`
 -   Add more schema support
     -   Schema 2019-09: unevaluatedProperties, unevaluatedItems, minContains,
-        maxContains, deprecated, dependentRequired, dependentSchemas, $defs,
+        maxContains, deprecated, dependentRequired, dependentSchemas,
+        $defs,
         $anchor
     -   Schema 2020-12: prefixItem
 
