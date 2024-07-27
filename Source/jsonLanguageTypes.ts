@@ -3,39 +3,102 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { JSONWorkerContribution, JSONPath, Segment, CompletionsCollector } from './jsonContributions';
-import { JSONSchema } from './jsonSchema';
 import {
-	Range, Position, DocumentUri, MarkupContent, MarkupKind,
-	Color, ColorInformation, ColorPresentation,
-	FoldingRange, FoldingRangeKind, SelectionRange,
-	Diagnostic, DiagnosticSeverity,
-	CompletionItem, CompletionItemKind, CompletionList, CompletionItemTag,
+	JSONWorkerContribution,
+	JSONPath,
+	Segment,
+	CompletionsCollector,
+} from "./jsonContributions";
+import { JSONSchema } from "./jsonSchema";
+import {
+	Range,
+	Position,
+	DocumentUri,
+	MarkupContent,
+	MarkupKind,
+	Color,
+	ColorInformation,
+	ColorPresentation,
+	FoldingRange,
+	FoldingRangeKind,
+	SelectionRange,
+	Diagnostic,
+	DiagnosticSeverity,
+	CompletionItem,
+	CompletionItemKind,
+	CompletionList,
+	CompletionItemTag,
 	InsertTextFormat,
-	SymbolInformation, SymbolKind, DocumentSymbol, Location, Hover, MarkedString, FormattingOptions as LSPFormattingOptions, DefinitionLink,
-	CodeActionContext, Command, CodeAction,
-	DocumentHighlight, DocumentLink, WorkspaceEdit,
-	TextEdit, CodeActionKind,
-	TextDocumentEdit, VersionedTextDocumentIdentifier, DocumentHighlightKind
-} from 'vscode-languageserver-types';
+	SymbolInformation,
+	SymbolKind,
+	DocumentSymbol,
+	Location,
+	Hover,
+	MarkedString,
+	FormattingOptions as LSPFormattingOptions,
+	DefinitionLink,
+	CodeActionContext,
+	Command,
+	CodeAction,
+	DocumentHighlight,
+	DocumentLink,
+	WorkspaceEdit,
+	TextEdit,
+	CodeActionKind,
+	TextDocumentEdit,
+	VersionedTextDocumentIdentifier,
+	DocumentHighlightKind,
+} from "vscode-languageserver-types";
 
-import { TextDocument, TextDocumentContentChangeEvent } from 'vscode-languageserver-textdocument';
+import {
+	TextDocument,
+	TextDocumentContentChangeEvent,
+} from "vscode-languageserver-textdocument";
 
 export {
 	TextDocument,
 	TextDocumentContentChangeEvent,
-	Range, Position, DocumentUri, MarkupContent, MarkupKind,
-	JSONSchema, JSONWorkerContribution, JSONPath, Segment, CompletionsCollector,
-	Color, ColorInformation, ColorPresentation,
-	FoldingRange, FoldingRangeKind, SelectionRange,
-	Diagnostic, DiagnosticSeverity,
-	CompletionItem, CompletionItemKind, CompletionList, CompletionItemTag,
-	InsertTextFormat, DefinitionLink,
-	SymbolInformation, SymbolKind, DocumentSymbol, Location, Hover, MarkedString,
-	CodeActionContext, Command, CodeAction,
-	DocumentHighlight, DocumentLink, WorkspaceEdit,
-	TextEdit, CodeActionKind,
-	TextDocumentEdit, VersionedTextDocumentIdentifier, DocumentHighlightKind
+	Range,
+	Position,
+	DocumentUri,
+	MarkupContent,
+	MarkupKind,
+	JSONSchema,
+	JSONWorkerContribution,
+	JSONPath,
+	Segment,
+	CompletionsCollector,
+	Color,
+	ColorInformation,
+	ColorPresentation,
+	FoldingRange,
+	FoldingRangeKind,
+	SelectionRange,
+	Diagnostic,
+	DiagnosticSeverity,
+	CompletionItem,
+	CompletionItemKind,
+	CompletionList,
+	CompletionItemTag,
+	InsertTextFormat,
+	DefinitionLink,
+	SymbolInformation,
+	SymbolKind,
+	DocumentSymbol,
+	Location,
+	Hover,
+	MarkedString,
+	CodeActionContext,
+	Command,
+	CodeAction,
+	DocumentHighlight,
+	DocumentLink,
+	WorkspaceEdit,
+	TextEdit,
+	CodeActionKind,
+	TextDocumentEdit,
+	VersionedTextDocumentIdentifier,
+	DocumentHighlightKind,
 };
 
 /**
@@ -62,13 +125,27 @@ export enum ErrorCode {
 	CommentNotPermitted = 0x209,
 	PropertyKeysMustBeDoublequoted = 0x210,
 	SchemaResolveError = 0x300,
-	SchemaUnsupportedFeature = 0x301
+	SchemaUnsupportedFeature = 0x301,
 }
 
-export type ASTNode = ObjectASTNode | PropertyASTNode | ArrayASTNode | StringASTNode | NumberASTNode | BooleanASTNode | NullASTNode;
+export type ASTNode =
+	| ObjectASTNode
+	| PropertyASTNode
+	| ArrayASTNode
+	| StringASTNode
+	| NumberASTNode
+	| BooleanASTNode
+	| NullASTNode;
 
 export interface BaseASTNode {
-	readonly type: 'object' | 'array' | 'property' | 'string' | 'number' | 'boolean' | 'null';
+	readonly type:
+		| "object"
+		| "array"
+		| "property"
+		| "string"
+		| "number"
+		| "boolean"
+		| "null";
 	readonly parent?: ASTNode;
 	readonly offset: number;
 	readonly length: number;
@@ -76,37 +153,37 @@ export interface BaseASTNode {
 	readonly value?: string | boolean | number | null;
 }
 export interface ObjectASTNode extends BaseASTNode {
-	readonly type: 'object';
+	readonly type: "object";
 	readonly properties: PropertyASTNode[];
 	readonly children: ASTNode[];
 }
 export interface PropertyASTNode extends BaseASTNode {
-	readonly type: 'property';
+	readonly type: "property";
 	readonly keyNode: StringASTNode;
 	readonly valueNode?: ASTNode;
 	readonly colonOffset?: number;
 	readonly children: ASTNode[];
 }
 export interface ArrayASTNode extends BaseASTNode {
-	readonly type: 'array';
+	readonly type: "array";
 	readonly items: ASTNode[];
 	readonly children: ASTNode[];
 }
 export interface StringASTNode extends BaseASTNode {
-	readonly type: 'string';
+	readonly type: "string";
 	readonly value: string;
 }
 export interface NumberASTNode extends BaseASTNode {
-	readonly type: 'number';
+	readonly type: "number";
 	readonly value: number;
 	readonly isInteger: boolean;
 }
 export interface BooleanASTNode extends BaseASTNode {
-	readonly type: 'boolean';
+	readonly type: "boolean";
 	readonly value: boolean;
 }
 export interface NullASTNode extends BaseASTNode {
-	readonly type: 'null';
+	readonly type: "null";
 	readonly value: null;
 }
 
@@ -136,7 +213,7 @@ export interface LanguageSettings {
 	schemas?: SchemaConfiguration[];
 }
 
-export type SeverityLevel = 'error' | 'warning' | 'ignore';
+export type SeverityLevel = "error" | "warning" | "ignore";
 
 export enum SchemaDraft {
 	v3 = 3,
@@ -144,7 +221,7 @@ export enum SchemaDraft {
 	v6 = 6,
 	v7 = 7,
 	v2019_09 = 19,
-	v2020_12 = 20
+	v2020_12 = 20,
 }
 
 export interface DocumentLanguageSettings {
@@ -216,7 +293,12 @@ export interface PromiseConstructor {
 	 * a resolve callback used resolve the promise with a value or the result of another promise,
 	 * and a reject callback used to reject the promise with a provided reason or error.
 	 */
-	new <T>(executor: (resolve: (value?: T | Thenable<T | undefined>) => void, reject: (reason?: any) => void) => void): Thenable<T | undefined>;
+	new <T>(
+		executor: (
+			resolve: (value?: T | Thenable<T | undefined>) => void,
+			reject: (reason?: any) => void,
+		) => void,
+	): Thenable<T | undefined>;
 
 	/**
 	 * Creates a Promise that is resolved with an array of results when all of the provided Promises
@@ -233,23 +315,28 @@ export interface PromiseConstructor {
 	reject<T>(reason: any): Thenable<T>;
 
 	/**
-		 * Creates a new resolved promise for the provided value.
-		 * @param value A promise.
-		 * @returns A promise whose internal state matches the provided promise.
-		 */
+	 * Creates a new resolved promise for the provided value.
+	 * @param value A promise.
+	 * @returns A promise whose internal state matches the provided promise.
+	 */
 	resolve<T>(value: T | Thenable<T>): Thenable<T>;
-
 }
 
 export interface Thenable<R> {
 	/**
-	* Attaches callbacks for the resolution and/or rejection of the Promise.
-	* @param onfulfilled The callback to execute when the Promise is resolved.
-	* @param onrejected The callback to execute when the Promise is rejected.
-	* @returns A Promise for the completion of which ever callback is executed.
-	*/
-	then<TResult>(onfulfilled?: (value: R) => TResult | Thenable<TResult>, onrejected?: (reason: any) => TResult | Thenable<TResult>): Thenable<TResult>;
-	then<TResult>(onfulfilled?: (value: R) => TResult | Thenable<TResult>, onrejected?: (reason: any) => void): Thenable<TResult>;
+	 * Attaches callbacks for the resolution and/or rejection of the Promise.
+	 * @param onfulfilled The callback to execute when the Promise is resolved.
+	 * @param onrejected The callback to execute when the Promise is rejected.
+	 * @returns A Promise for the completion of which ever callback is executed.
+	 */
+	then<TResult>(
+		onfulfilled?: (value: R) => TResult | Thenable<TResult>,
+		onrejected?: (reason: any) => TResult | Thenable<TResult>,
+	): Thenable<TResult>;
+	then<TResult>(
+		onfulfilled?: (value: R) => TResult | Thenable<TResult>,
+		onrejected?: (reason: any) => void,
+	): Thenable<TResult>;
 }
 
 export interface LanguageServiceParams {
@@ -310,7 +397,6 @@ export interface ClientCapabilities {
 				 */
 				labelDetailsSupport?: boolean;
 			};
-
 		};
 		/**
 		 * Capabilities specific to hovers.
@@ -330,12 +416,15 @@ export namespace ClientCapabilities {
 		textDocument: {
 			completion: {
 				completionItem: {
-					documentationFormat: [MarkupKind.Markdown, MarkupKind.PlainText],
+					documentationFormat: [
+						MarkupKind.Markdown,
+						MarkupKind.PlainText,
+					],
 					commitCharactersSupport: true,
-					labelDetailsSupport: true
-				}
-			}
-		}
+					labelDetailsSupport: true,
+				},
+			},
+		},
 	};
 }
 

@@ -7,8 +7,6 @@
 		"declaration": true,
 		"stripInternal": true,
 		"outDir": "../lib/esm",
-		"lib": [
-			"es2020"
-		]
+		"lib": ["es2020"]
 	}
 }
