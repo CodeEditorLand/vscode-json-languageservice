@@ -1,16 +1,9 @@
 {
-	"dependencies": {
-		"jsonc-parser": "3.3.1"
-	},
+	"name": "vscode-json-languageservice",
 	"description": "Language service for JSON",
-	"devDependencies": {
-		"@types/node": "22.4",
-		"json-schema-test-suite": "https://github.com/json-schema-org/JSON-Schema-Test-Suite.git#69acf52990b004240839ae19b4bec8fb01d50876",
-		"rimraf": "6.0.1"
-	},
 	"main": "./lib/umd/jsonLanguageService.js",
 	"module": "./lib/esm/jsonLanguageService.js",
-	"name": "vscode-json-languageservice",
+	"typings": "./lib/umd/jsonLanguageService",
 	"scripts": {
 		"clean": "rimraf lib",
 		"compile": "tsc -p ./src",
@@ -21,5 +14,12 @@
 		"remove-sourcemap-refs": "node ./build/remove-sourcemap-refs.js",
 		"sample": "npm run compile && node ./lib/umd/example/sample.js"
 	},
-	"typings": "./lib/umd/jsonLanguageService"
+	"dependencies": {
+		"jsonc-parser": "3.3.1"
+	},
+	"devDependencies": {
+		"@types/node": "22.4",
+		"json-schema-test-suite": "https://github.com/json-schema-org/JSON-Schema-Test-Suite.git#69acf52990b004240839ae19b4bec8fb01d50876",
+		"rimraf": "6.0.1"
+	}
 }
