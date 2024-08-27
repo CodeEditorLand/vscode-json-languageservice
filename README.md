@@ -31,7 +31,7 @@ editing experience of Visual Studio Code and the Monaco editor.
 For the complete API see [jsonLanguageService.ts](./src/jsonLanguageService.ts)
 and [jsonLanguageTypes.ts](./src/jsonLanguageTypes.ts)
 
-## Installation
+## 🚀 Installation
 
     npm install --save vscode-json-languageservice
 
