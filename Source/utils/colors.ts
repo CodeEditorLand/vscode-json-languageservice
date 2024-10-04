@@ -19,7 +19,7 @@ export function hexDigit(charCode: number) {
 		return charCode - Digit0;
 	}
 	if (charCode < a) {
-		charCode += (a - A);
+		charCode += a - A;
 	}
 	if (charCode >= a && charCode <= f) {
 		return charCode - a + 10;
@@ -28,7 +28,7 @@ export function hexDigit(charCode: number) {
 }
 
 export function colorFromHex(text: string): Color | undefined {
-	if (text[0] !== '#') {
+	if (text[0] !== "#") {
 		return undefined;
 	}
 	switch (text.length) {
@@ -37,7 +37,7 @@ export function colorFromHex(text: string): Color | undefined {
 				red: (hexDigit(text.charCodeAt(1)) * 0x11) / 255.0,
 				green: (hexDigit(text.charCodeAt(2)) * 0x11) / 255.0,
 				blue: (hexDigit(text.charCodeAt(3)) * 0x11) / 255.0,
-				alpha: 1
+				alpha: 1,
 			};
 		case 5:
 			return {
@@ -48,27 +48,53 @@ export function colorFromHex(text: string): Color | undefined {
 			};
 		case 7:
 			return {
-				red: (hexDigit(text.charCodeAt(1)) * 0x10 + hexDigit(text.charCodeAt(2))) / 255.0,
-				green: (hexDigit(text.charCodeAt(3)) * 0x10 + hexDigit(text.charCodeAt(4))) / 255.0,
-				blue: (hexDigit(text.charCodeAt(5)) * 0x10 + hexDigit(text.charCodeAt(6))) / 255.0,
-				alpha: 1
+				red:
+					(hexDigit(text.charCodeAt(1)) * 0x10 +
+						hexDigit(text.charCodeAt(2))) /
+					255.0,
+				green:
+					(hexDigit(text.charCodeAt(3)) * 0x10 +
+						hexDigit(text.charCodeAt(4))) /
+					255.0,
+				blue:
+					(hexDigit(text.charCodeAt(5)) * 0x10 +
+						hexDigit(text.charCodeAt(6))) /
+					255.0,
+				alpha: 1,
 			};
 		case 9:
 			return {
-				red: (hexDigit(text.charCodeAt(1)) * 0x10 + hexDigit(text.charCodeAt(2))) / 255.0,
-				green: (hexDigit(text.charCodeAt(3)) * 0x10 + hexDigit(text.charCodeAt(4))) / 255.0,
-				blue: (hexDigit(text.charCodeAt(5)) * 0x10 + hexDigit(text.charCodeAt(6))) / 255.0,
-				alpha: (hexDigit(text.charCodeAt(7)) * 0x10 + hexDigit(text.charCodeAt(8))) / 255.0
+				red:
+					(hexDigit(text.charCodeAt(1)) * 0x10 +
+						hexDigit(text.charCodeAt(2))) /
+					255.0,
+				green:
+					(hexDigit(text.charCodeAt(3)) * 0x10 +
+						hexDigit(text.charCodeAt(4))) /
+					255.0,
+				blue:
+					(hexDigit(text.charCodeAt(5)) * 0x10 +
+						hexDigit(text.charCodeAt(6))) /
+					255.0,
+				alpha:
+					(hexDigit(text.charCodeAt(7)) * 0x10 +
+						hexDigit(text.charCodeAt(8))) /
+					255.0,
 			};
 	}
 	return undefined;
 }
 
-export function colorFrom256RGB(red: number, green: number, blue: number, alpha: number = 1.0) {
+export function colorFrom256RGB(
+	red: number,
+	green: number,
+	blue: number,
+	alpha: number = 1.0,
+) {
 	return {
 		red: red / 255.0,
 		green: green / 255.0,
 		blue: blue / 255.0,
-		alpha
+		alpha,
 	};
 }

@@ -3,13 +3,21 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Range, Position, SelectionRange, TextDocument } from '../jsonLanguageTypes';
+import { createScanner, SyntaxKind } from "jsonc-parser";
 
-import { JSONDocument } from '../parser/jsonParser';
-import { SyntaxKind, createScanner } from 'jsonc-parser';
+import {
+	Position,
+	Range,
+	SelectionRange,
+	TextDocument,
+} from "../jsonLanguageTypes";
+import { JSONDocument } from "../parser/jsonParser";
 
-export function getSelectionRanges(document: TextDocument, positions: Position[], doc: JSONDocument): SelectionRange[] {
-
+export function getSelectionRanges(
+	document: TextDocument,
+	positions: Position[],
+	doc: JSONDocument,
+): SelectionRange[] {
 	function getSelectionRange(position: Position): SelectionRange {
 		let offset = document.offsetAt(position);
 		let node = doc.getNodeFromOffset(offset, true);
@@ -18,25 +26,36 @@ export function getSelectionRanges(document: TextDocument, positions: Position[]
 
 		while (node) {
 			switch (node.type) {
-				case 'string':
-				case 'object':
-				case 'array':
+				case "string":
+				case "object":
+				case "array":
 					// range without ", [ or {
-					const cStart = node.offset + 1, cEnd = node.offset + node.length - 1;
+					const cStart = node.offset + 1,
+						cEnd = node.offset + node.length - 1;
 					if (cStart < cEnd && offset >= cStart && offset <= cEnd) {
 						result.push(newRange(cStart, cEnd));
 					}
-					result.push(newRange(node.offset, node.offset + node.length));
+					result.push(
+						newRange(node.offset, node.offset + node.length),
+					);
 					break;
-				case 'number':
-				case 'boolean':
-				case 'null':
-				case 'property':
-					result.push(newRange(node.offset, node.offset + node.length));
+				case "number":
+				case "boolean":
+				case "null":
+				case "property":
+					result.push(
+						newRange(node.offset, node.offset + node.length),
+					);
 					break;
 			}
-			if (node.type === 'property' || node.parent && node.parent.type === 'array') {
-				const afterCommaOffset = getOffsetAfterNextToken(node.offset + node.length, SyntaxKind.CommaToken);
+			if (
+				node.type === "property" ||
+				(node.parent && node.parent.type === "array")
+			) {
+				const afterCommaOffset = getOffsetAfterNextToken(
+					node.offset + node.length,
+					SyntaxKind.CommaToken,
+				);
 				if (afterCommaOffset !== -1) {
 					result.push(newRange(node.offset, afterCommaOffset));
 				}
@@ -54,12 +73,18 @@ export function getSelectionRanges(document: TextDocument, positions: Position[]
 	}
 
 	function newRange(start: number, end: number): Range {
-		return Range.create(document.positionAt(start), document.positionAt(end));
+		return Range.create(
+			document.positionAt(start),
+			document.positionAt(end),
+		);
 	}
 
 	const scanner = createScanner(document.getText(), true);
 
-	function getOffsetAfterNextToken(offset: number, expectedToken: SyntaxKind): number {
+	function getOffsetAfterNextToken(
+		offset: number,
+		expectedToken: SyntaxKind,
+	): number {
 		scanner.setPosition(offset);
 		let token = scanner.scan();
 		if (token === expectedToken) {
@@ -70,8 +95,3 @@ export function getSelectionRanges(document: TextDocument, positions: Position[]
 
 	return positions.map(getSelectionRange);
 }
-
-
-
-
-

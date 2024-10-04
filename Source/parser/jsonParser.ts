@@ -3,13 +3,36 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as Json from 'jsonc-parser';
-import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
-import { isNumber, equals, isBoolean, isString, isDefined, isObject } from '../utils/objects';
-import { extendedRegExp, stringLength } from '../utils/strings';
-import { TextDocument, ASTNode, ObjectASTNode, ArrayASTNode, BooleanASTNode, NumberASTNode, StringASTNode, NullASTNode, PropertyASTNode, JSONPath, ErrorCode, Diagnostic, DiagnosticSeverity, Range, SchemaDraft } from '../jsonLanguageTypes';
+import * as l10n from "@vscode/l10n";
+import * as Json from "jsonc-parser";
 
-import * as l10n from '@vscode/l10n';
+import {
+	ArrayASTNode,
+	ASTNode,
+	BooleanASTNode,
+	Diagnostic,
+	DiagnosticSeverity,
+	ErrorCode,
+	JSONPath,
+	NullASTNode,
+	NumberASTNode,
+	ObjectASTNode,
+	PropertyASTNode,
+	Range,
+	SchemaDraft,
+	StringASTNode,
+	TextDocument,
+} from "../jsonLanguageTypes";
+import { JSONSchema, JSONSchemaRef } from "../jsonSchema";
+import {
+	equals,
+	isBoolean,
+	isDefined,
+	isNumber,
+	isObject,
+	isString,
+} from "../utils/objects";
+import { extendedRegExp, stringLength } from "../utils/strings";
 
 export interface IRange {
 	offset: number;
@@ -17,14 +40,46 @@ export interface IRange {
 }
 
 const formats = {
-	'color-hex': { errorMessage: l10n.t('Invalid color format. Use #RGB, #RGBA, #RRGGBB or #RRGGBBAA.'), pattern: /^#([0-9A-Fa-f]{3,4}|([0-9A-Fa-f]{2}){3,4})$/ },
-	'date-time': { errorMessage: l10n.t('String is not a RFC3339 date-time.'), pattern: /^(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)([01][0-9]|2[0-3]):([0-5][0-9]))$/i },
-	'date': { errorMessage: l10n.t('String is not a RFC3339 date.'), pattern: /^(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/i },
-	'time': { errorMessage: l10n.t('String is not a RFC3339 time.'), pattern: /^([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)([01][0-9]|2[0-3]):([0-5][0-9]))$/i },
-	'email': { errorMessage: l10n.t('String is not an e-mail address.'), pattern: /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}))$/ },
-	'hostname': { errorMessage: l10n.t('String is not a hostname.'), pattern: /^(?=.{1,253}\.?$)[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[-0-9a-z]{0,61}[0-9a-z])?)*\.?$/i },
-	'ipv4': { errorMessage: l10n.t('String is not an IPv4 address.'), pattern: /^(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.){3}(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)$/ },
-	'ipv6': { errorMessage: l10n.t('String is not an IPv6 address.'), pattern: /^((([0-9a-f]{1,4}:){7}([0-9a-f]{1,4}|:))|(([0-9a-f]{1,4}:){6}(:[0-9a-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9a-f]{1,4}:){5}(((:[0-9a-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9a-f]{1,4}:){4}(((:[0-9a-f]{1,4}){1,3})|((:[0-9a-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9a-f]{1,4}:){3}(((:[0-9a-f]{1,4}){1,4})|((:[0-9a-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9a-f]{1,4}:){2}(((:[0-9a-f]{1,4}){1,5})|((:[0-9a-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9a-f]{1,4}:){1}(((:[0-9a-f]{1,4}){1,6})|((:[0-9a-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9a-f]{1,4}){1,7})|((:[0-9a-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))$/i },
+	"color-hex": {
+		errorMessage: l10n.t(
+			"Invalid color format. Use #RGB, #RGBA, #RRGGBB or #RRGGBBAA.",
+		),
+		pattern: /^#([0-9A-Fa-f]{3,4}|([0-9A-Fa-f]{2}){3,4})$/,
+	},
+	"date-time": {
+		errorMessage: l10n.t("String is not a RFC3339 date-time."),
+		pattern:
+			/^(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)([01][0-9]|2[0-3]):([0-5][0-9]))$/i,
+	},
+	"date": {
+		errorMessage: l10n.t("String is not a RFC3339 date."),
+		pattern: /^(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/i,
+	},
+	"time": {
+		errorMessage: l10n.t("String is not a RFC3339 time."),
+		pattern:
+			/^([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)([01][0-9]|2[0-3]):([0-5][0-9]))$/i,
+	},
+	"email": {
+		errorMessage: l10n.t("String is not an e-mail address."),
+		pattern:
+			/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}))$/,
+	},
+	"hostname": {
+		errorMessage: l10n.t("String is not a hostname."),
+		pattern:
+			/^(?=.{1,253}\.?$)[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[-0-9a-z]{0,61}[0-9a-z])?)*\.?$/i,
+	},
+	"ipv4": {
+		errorMessage: l10n.t("String is not an IPv4 address."),
+		pattern:
+			/^(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.){3}(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)$/,
+	},
+	"ipv6": {
+		errorMessage: l10n.t("String is not an IPv6 address."),
+		pattern:
+			/^((([0-9a-f]{1,4}:){7}([0-9a-f]{1,4}|:))|(([0-9a-f]{1,4}:){6}(:[0-9a-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9a-f]{1,4}:){5}(((:[0-9a-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9a-f]{1,4}:){4}(((:[0-9a-f]{1,4}){1,3})|((:[0-9a-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9a-f]{1,4}:){3}(((:[0-9a-f]{1,4}){1,4})|((:[0-9a-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9a-f]{1,4}:){2}(((:[0-9a-f]{1,4}){1,5})|((:[0-9a-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9a-f]{1,4}:){1}(((:[0-9a-f]{1,4}){1,6})|((:[0-9a-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9a-f]{1,4}){1,7})|((:[0-9a-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))$/i,
+	},
 };
 
 export interface IProblem {
@@ -35,14 +90,24 @@ export interface IProblem {
 }
 
 export abstract class ASTNodeImpl {
-
-	public readonly abstract type: 'object' | 'property' | 'array' | 'number' | 'boolean' | 'null' | 'string';
+	public abstract readonly type:
+		| "object"
+		| "property"
+		| "array"
+		| "number"
+		| "boolean"
+		| "null"
+		| "string";
 
 	public offset: number;
 	public length: number;
 	public readonly parent: ASTNode | undefined;
 
-	constructor(parent: ASTNode | undefined, offset: number, length: number = 0) {
+	constructor(
+		parent: ASTNode | undefined,
+		offset: number,
+		length: number = 0,
+	) {
 		this.offset = offset;
 		this.length = length;
 		this.parent = parent;
@@ -53,13 +118,21 @@ export abstract class ASTNodeImpl {
 	}
 
 	public toString(): string {
-		return 'type: ' + this.type + ' (' + this.offset + '/' + this.length + ')' + (this.parent ? ' parent: {' + this.parent.toString() + '}' : '');
+		return (
+			"type: " +
+			this.type +
+			" (" +
+			this.offset +
+			"/" +
+			this.length +
+			")" +
+			(this.parent ? " parent: {" + this.parent.toString() + "}" : "")
+		);
 	}
 }
 
 export class NullASTNodeImpl extends ASTNodeImpl implements NullASTNode {
-
-	public type: 'null' = 'null';
+	public type: "null" = "null";
 	public value: null = null;
 	constructor(parent: ASTNode | undefined, offset: number) {
 		super(parent, offset);
@@ -67,19 +140,21 @@ export class NullASTNodeImpl extends ASTNodeImpl implements NullASTNode {
 }
 
 export class BooleanASTNodeImpl extends ASTNodeImpl implements BooleanASTNode {
-
-	public type: 'boolean' = 'boolean';
+	public type: "boolean" = "boolean";
 	public value: boolean;
 
-	constructor(parent: ASTNode | undefined, boolValue: boolean, offset: number) {
+	constructor(
+		parent: ASTNode | undefined,
+		boolValue: boolean,
+		offset: number,
+	) {
 		super(parent, offset);
 		this.value = boolValue;
 	}
 }
 
 export class ArrayASTNodeImpl extends ASTNodeImpl implements ArrayASTNode {
-
-	public type: 'array' = 'array';
+	public type: "array" = "array";
 	public items: ASTNode[];
 
 	constructor(parent: ASTNode | undefined, offset: number) {
@@ -93,8 +168,7 @@ export class ArrayASTNodeImpl extends ASTNodeImpl implements ArrayASTNode {
 }
 
 export class NumberASTNodeImpl extends ASTNodeImpl implements NumberASTNode {
-
-	public type: 'number' = 'number';
+	public type: "number" = "number";
 	public isInteger: boolean;
 	public value: number;
 
@@ -106,22 +180,29 @@ export class NumberASTNodeImpl extends ASTNodeImpl implements NumberASTNode {
 }
 
 export class StringASTNodeImpl extends ASTNodeImpl implements StringASTNode {
-	public type: 'string' = 'string';
+	public type: "string" = "string";
 	public value: string;
 
 	constructor(parent: ASTNode | undefined, offset: number, length?: number) {
 		super(parent, offset, length);
-		this.value = '';
+		this.value = "";
 	}
 }
 
-export class PropertyASTNodeImpl extends ASTNodeImpl implements PropertyASTNode {
-	public type: 'property' = 'property';
+export class PropertyASTNodeImpl
+	extends ASTNodeImpl
+	implements PropertyASTNode
+{
+	public type: "property" = "property";
 	public keyNode: StringASTNode;
 	public valueNode?: ASTNode;
 	public colonOffset: number;
 
-	constructor(parent: ObjectASTNode | undefined, offset: number, keyNode: StringASTNode) {
+	constructor(
+		parent: ObjectASTNode | undefined,
+		offset: number,
+		keyNode: StringASTNode,
+	) {
 		super(parent, offset);
 		this.colonOffset = -1;
 		this.keyNode = keyNode;
@@ -133,7 +214,7 @@ export class PropertyASTNodeImpl extends ASTNodeImpl implements PropertyASTNode 
 }
 
 export class ObjectASTNodeImpl extends ASTNodeImpl implements ObjectASTNode {
-	public type: 'object' = 'object';
+	public type: "object" = "object";
 	public properties: PropertyASTNode[];
 
 	constructor(parent: ASTNode | undefined, offset: number) {
@@ -145,11 +226,14 @@ export class ObjectASTNodeImpl extends ASTNodeImpl implements ObjectASTNode {
 	public get children(): ASTNode[] {
 		return this.properties;
 	}
-
 }
 export function asSchema(schema: JSONSchemaRef): JSONSchema;
-export function asSchema(schema: JSONSchemaRef | undefined): JSONSchema | undefined;
-export function asSchema(schema: JSONSchemaRef | undefined): JSONSchema | undefined {
+export function asSchema(
+	schema: JSONSchemaRef | undefined,
+): JSONSchema | undefined;
+export function asSchema(
+	schema: JSONSchemaRef | undefined,
+): JSONSchema | undefined {
 	if (isBoolean(schema)) {
 		return schema ? {} : { "not": {} };
 	}
@@ -168,16 +252,17 @@ export interface IApplicableSchema {
 }
 
 export enum EnumMatch {
-	Key, Enum
+	Key,
+	Enum,
 }
 
 const schemaDraftFromId: { [id: string]: SchemaDraft } = {
-	'http://json-schema.org/draft-03/schema#': SchemaDraft.v3,
-	'http://json-schema.org/draft-04/schema#': SchemaDraft.v4,
-	'http://json-schema.org/draft-06/schema#': SchemaDraft.v6,
-	'http://json-schema.org/draft-07/schema#': SchemaDraft.v7,
-	'https://json-schema.org/draft/2019-09/schema': SchemaDraft.v2019_09,
-	'https://json-schema.org/draft/2020-12/schema': SchemaDraft.v2020_12
+	"http://json-schema.org/draft-03/schema#": SchemaDraft.v3,
+	"http://json-schema.org/draft-04/schema#": SchemaDraft.v4,
+	"http://json-schema.org/draft-06/schema#": SchemaDraft.v6,
+	"http://json-schema.org/draft-07/schema#": SchemaDraft.v7,
+	"https://json-schema.org/draft/2019-09/schema": SchemaDraft.v2019_09,
+	"https://json-schema.org/draft/2020-12/schema": SchemaDraft.v2020_12,
 };
 
 export interface ISchemaCollector {
@@ -193,15 +278,15 @@ export interface IEvaluationContext {
 }
 
 class EvaluationContext implements IEvaluationContext {
-	constructor(public readonly schemaDraft: SchemaDraft) {
-	}
+	constructor(public readonly schemaDraft: SchemaDraft) {}
 }
-
 
 class SchemaCollector implements ISchemaCollector {
 	schemas: IApplicableSchema[] = [];
-	constructor(private focusOffset = -1, private exclude?: ASTNode) {
-	}
+	constructor(
+		private focusOffset = -1,
+		private exclude?: ASTNode,
+	) {}
 	add(schema: IApplicableSchema) {
 		this.schemas.push(schema);
 	}
@@ -209,7 +294,10 @@ class SchemaCollector implements ISchemaCollector {
 		Array.prototype.push.apply(this.schemas, other.schemas);
 	}
 	include(node: ASTNode) {
-		return (this.focusOffset === -1 || contains(node, this.focusOffset)) && (node !== this.exclude);
+		return (
+			(this.focusOffset === -1 || contains(node, this.focusOffset)) &&
+			node !== this.exclude
+		);
 	}
 	newSub(): ISchemaCollector {
 		return new SchemaCollector(-1, this.exclude);
@@ -217,12 +305,18 @@ class SchemaCollector implements ISchemaCollector {
 }
 
 class NoOpSchemaCollector implements ISchemaCollector {
-	private constructor() { }
-	get schemas() { return []; }
-	add(_schema: IApplicableSchema) { }
-	merge(_other: ISchemaCollector) { }
-	include(_node: ASTNode) { return true; }
-	newSub(): ISchemaCollector { return this; }
+	private constructor() {}
+	get schemas() {
+		return [];
+	}
+	add(_schema: IApplicableSchema) {}
+	merge(_other: ISchemaCollector) {}
+	include(_node: ASTNode) {
+		return true;
+	}
+	newSub(): ISchemaCollector {
+		return this;
+	}
 
 	static instance = new NoOpSchemaCollector();
 }
@@ -259,29 +353,53 @@ export class ValidationResult {
 	}
 
 	public mergeEnumValues(validationResult: ValidationResult): void {
-		if (!this.enumValueMatch && !validationResult.enumValueMatch && this.enumValues && validationResult.enumValues) {
-			this.enumValues = this.enumValues.concat(validationResult.enumValues);
+		if (
+			!this.enumValueMatch &&
+			!validationResult.enumValueMatch &&
+			this.enumValues &&
+			validationResult.enumValues
+		) {
+			this.enumValues = this.enumValues.concat(
+				validationResult.enumValues,
+			);
 			for (const error of this.problems) {
 				if (error.code === ErrorCode.EnumValueMismatch) {
-					error.message = l10n.t('Value is not accepted. Valid values: {0}.', this.enumValues.map(v => JSON.stringify(v)).join(', '));
+					error.message = l10n.t(
+						"Value is not accepted. Valid values: {0}.",
+						this.enumValues
+							.map((v) => JSON.stringify(v))
+							.join(", "),
+					);
 				}
 			}
 		}
 	}
 
-	public mergePropertyMatch(propertyValidationResult: ValidationResult): void {
+	public mergePropertyMatch(
+		propertyValidationResult: ValidationResult,
+	): void {
 		this.problems = this.problems.concat(propertyValidationResult.problems);
 		this.propertiesMatches++;
-		if (propertyValidationResult.enumValueMatch || !propertyValidationResult.hasProblems() && propertyValidationResult.propertiesMatches) {
+		if (
+			propertyValidationResult.enumValueMatch ||
+			(!propertyValidationResult.hasProblems() &&
+				propertyValidationResult.propertiesMatches)
+		) {
 			this.propertiesValueMatches++;
 		}
-		if (propertyValidationResult.enumValueMatch && propertyValidationResult.enumValues && propertyValidationResult.enumValues.length === 1) {
+		if (
+			propertyValidationResult.enumValueMatch &&
+			propertyValidationResult.enumValues &&
+			propertyValidationResult.enumValues.length === 1
+		) {
 			this.primaryValueMatches++;
 		}
 	}
 
 	public mergeProcessedProperties(validationResult: ValidationResult): void {
-		validationResult.processedProperties.forEach(p => this.processedProperties.add(p));
+		validationResult.processedProperties.forEach((p) =>
+			this.processedProperties.add(p),
+		);
 	}
 
 	public compare(other: ValidationResult): number {
@@ -300,7 +418,6 @@ export class ValidationResult {
 		}
 		return this.propertiesMatches - other.propertiesMatches;
 	}
-
 }
 
 export function newJSONDocument(root: ASTNode, diagnostics: Diagnostic[] = []) {
@@ -315,18 +432,32 @@ export function getNodePath(node: ASTNode): JSONPath {
 	return Json.getNodePath(node);
 }
 
-export function contains(node: ASTNode, offset: number, includeRightBound = false): boolean {
-	return offset >= node.offset && offset < (node.offset + node.length) || includeRightBound && offset === (node.offset + node.length);
+export function contains(
+	node: ASTNode,
+	offset: number,
+	includeRightBound = false,
+): boolean {
+	return (
+		(offset >= node.offset && offset < node.offset + node.length) ||
+		(includeRightBound && offset === node.offset + node.length)
+	);
 }
 
 export class JSONDocument {
+	constructor(
+		public readonly root: ASTNode | undefined,
+		public readonly syntaxErrors: Diagnostic[] = [],
+		public readonly comments: Range[] = [],
+	) {}
 
-	constructor(public readonly root: ASTNode | undefined, public readonly syntaxErrors: Diagnostic[] = [], public readonly comments: Range[] = []) {
-	}
-
-	public getNodeFromOffset(offset: number, includeRightBound = false): ASTNode | undefined {
+	public getNodeFromOffset(
+		offset: number,
+		includeRightBound = false,
+	): ASTNode | undefined {
 		if (this.root) {
-			return <ASTNode>Json.findNodeAtOffset(this.root, offset, includeRightBound);
+			return <ASTNode>(
+				Json.findNodeAtOffset(this.root, offset, includeRightBound)
+			);
 		}
 		return undefined;
 	}
@@ -347,24 +478,55 @@ export class JSONDocument {
 		}
 	}
 
-	public validate(textDocument: TextDocument, schema: JSONSchema | undefined, severity: DiagnosticSeverity = DiagnosticSeverity.Warning, schemaDraft?: SchemaDraft): Diagnostic[] | undefined {
+	public validate(
+		textDocument: TextDocument,
+		schema: JSONSchema | undefined,
+		severity: DiagnosticSeverity = DiagnosticSeverity.Warning,
+		schemaDraft?: SchemaDraft,
+	): Diagnostic[] | undefined {
 		if (this.root && schema) {
 			const validationResult = new ValidationResult();
-			validate(this.root, schema, validationResult, NoOpSchemaCollector.instance, new EvaluationContext(schemaDraft ?? getSchemaDraft(schema)));
-			return validationResult.problems.map(p => {
-				const range = Range.create(textDocument.positionAt(p.location.offset), textDocument.positionAt(p.location.offset + p.location.length));
-				return Diagnostic.create(range, p.message, p.severity ?? severity, p.code);
+			validate(
+				this.root,
+				schema,
+				validationResult,
+				NoOpSchemaCollector.instance,
+				new EvaluationContext(schemaDraft ?? getSchemaDraft(schema)),
+			);
+			return validationResult.problems.map((p) => {
+				const range = Range.create(
+					textDocument.positionAt(p.location.offset),
+					textDocument.positionAt(
+						p.location.offset + p.location.length,
+					),
+				);
+				return Diagnostic.create(
+					range,
+					p.message,
+					p.severity ?? severity,
+					p.code,
+				);
 			});
 		}
 		return undefined;
 	}
 
-	public getMatchingSchemas(schema: JSONSchema, focusOffset: number = -1, exclude?: ASTNode): IApplicableSchema[] {
+	public getMatchingSchemas(
+		schema: JSONSchema,
+		focusOffset: number = -1,
+		exclude?: ASTNode,
+	): IApplicableSchema[] {
 		if (this.root && schema) {
 			const matchingSchemas = new SchemaCollector(focusOffset, exclude);
 			const schemaDraft = getSchemaDraft(schema);
 			const context = new EvaluationContext(schemaDraft);
-			validate(this.root, schema, new ValidationResult(), matchingSchemas, context);
+			validate(
+				this.root,
+				schema,
+				new ValidationResult(),
+				matchingSchemas,
+				context,
+			);
 			return matchingSchemas.schemas;
 		}
 		return [];
@@ -378,28 +540,39 @@ function getSchemaDraft(schema: JSONSchema, fallBack = SchemaDraft.v2020_12) {
 	return fallBack;
 }
 
-function validate(n: ASTNode | undefined, schema: JSONSchema, validationResult: ValidationResult, matchingSchemas: ISchemaCollector, context: IEvaluationContext): void {
-
+function validate(
+	n: ASTNode | undefined,
+	schema: JSONSchema,
+	validationResult: ValidationResult,
+	matchingSchemas: ISchemaCollector,
+	context: IEvaluationContext,
+): void {
 	if (!n || !matchingSchemas.include(n)) {
 		return;
 	}
-	if (n.type === 'property') {
-		return validate(n.valueNode, schema, validationResult, matchingSchemas, context);
+	if (n.type === "property") {
+		return validate(
+			n.valueNode,
+			schema,
+			validationResult,
+			matchingSchemas,
+			context,
+		);
 	}
 	const node = n;
 	_validateNode();
 
 	switch (node.type) {
-		case 'object':
+		case "object":
 			_validateObjectNode(node);
 			break;
-		case 'array':
+		case "array":
 			_validateArrayNode(node);
 			break;
-		case 'string':
+		case "string":
 			_validateStringNode(node);
 			break;
-		case 'number':
+		case "number":
 			_validateNumberNode(node);
 			break;
 	}
@@ -407,24 +580,32 @@ function validate(n: ASTNode | undefined, schema: JSONSchema, validationResult: 
 	matchingSchemas.add({ node: node, schema: schema });
 
 	function _validateNode() {
-
 		function matchesType(type: string) {
-			return node.type === type || (type === 'integer' && node.type === 'number' && node.isInteger);
+			return (
+				node.type === type ||
+				(type === "integer" && node.type === "number" && node.isInteger)
+			);
 		}
 
 		if (Array.isArray(schema.type)) {
 			if (!schema.type.some(matchesType)) {
 				validationResult.problems.push({
 					location: { offset: node.offset, length: node.length },
-					message: schema.errorMessage || l10n.t('Incorrect type. Expected one of {0}.', (<string[]>schema.type).join(', '))
+					message:
+						schema.errorMessage ||
+						l10n.t(
+							"Incorrect type. Expected one of {0}.",
+							(<string[]>schema.type).join(", "),
+						),
 				});
 			}
-		}
-		else if (schema.type) {
+		} else if (schema.type) {
 			if (!matchesType(schema.type)) {
 				validationResult.problems.push({
 					location: { offset: node.offset, length: node.length },
-					message: schema.errorMessage || l10n.t('Incorrect type. Expected "{0}".', schema.type)
+					message:
+						schema.errorMessage ||
+						l10n.t('Incorrect type. Expected "{0}".', schema.type),
 				});
 			}
 		}
@@ -432,7 +613,13 @@ function validate(n: ASTNode | undefined, schema: JSONSchema, validationResult: 
 			for (const subSchemaRef of schema.allOf) {
 				const subValidationResult = new ValidationResult();
 				const subMatchingSchemas = matchingSchemas.newSub();
-				validate(node, asSchema(subSchemaRef), subValidationResult, subMatchingSchemas, context);
+				validate(
+					node,
+					asSchema(subSchemaRef),
+					subValidationResult,
+					subMatchingSchemas,
+					context,
+				);
 				validationResult.merge(subValidationResult);
 				matchingSchemas.merge(subMatchingSchemas);
 			}
@@ -441,11 +628,19 @@ function validate(n: ASTNode | undefined, schema: JSONSchema, validationResult: 
 		if (notSchema) {
 			const subValidationResult = new ValidationResult();
 			const subMatchingSchemas = matchingSchemas.newSub();
-			validate(node, notSchema, subValidationResult, subMatchingSchemas, context);
+			validate(
+				node,
+				notSchema,
+				subValidationResult,
+				subMatchingSchemas,
+				context,
+			);
 			if (!subValidationResult.hasProblems()) {
 				validationResult.problems.push({
 					location: { offset: node.offset, length: node.length },
-					message: schema.errorMessage || l10n.t("Matches a schema that is not allowed.")
+					message:
+						schema.errorMessage ||
+						l10n.t("Matches a schema that is not allowed."),
 				});
 			}
 			for (const ms of subMatchingSchemas.schemas) {
@@ -454,37 +649,72 @@ function validate(n: ASTNode | undefined, schema: JSONSchema, validationResult: 
 			}
 		}
 
-		const testAlternatives = (alternatives: JSONSchemaRef[], maxOneMatch: boolean) => {
+		const testAlternatives = (
+			alternatives: JSONSchemaRef[],
+			maxOneMatch: boolean,
+		) => {
 			const matches = [];
 
 			// remember the best match that is used for error messages
-			let bestMatch: { schema: JSONSchema; validationResult: ValidationResult; matchingSchemas: ISchemaCollector; } | undefined = undefined;
+			let bestMatch:
+				| {
+						schema: JSONSchema;
+						validationResult: ValidationResult;
+						matchingSchemas: ISchemaCollector;
+				  }
+				| undefined = undefined;
 			for (const subSchemaRef of alternatives) {
 				const subSchema = asSchema(subSchemaRef);
 				const subValidationResult = new ValidationResult();
 				const subMatchingSchemas = matchingSchemas.newSub();
-				validate(node, subSchema, subValidationResult, subMatchingSchemas, context);
+				validate(
+					node,
+					subSchema,
+					subValidationResult,
+					subMatchingSchemas,
+					context,
+				);
 				if (!subValidationResult.hasProblems()) {
 					matches.push(subSchema);
 				}
 				if (!bestMatch) {
-					bestMatch = { schema: subSchema, validationResult: subValidationResult, matchingSchemas: subMatchingSchemas };
+					bestMatch = {
+						schema: subSchema,
+						validationResult: subValidationResult,
+						matchingSchemas: subMatchingSchemas,
+					};
 				} else {
-					if (!maxOneMatch && !subValidationResult.hasProblems() && !bestMatch.validationResult.hasProblems()) {
+					if (
+						!maxOneMatch &&
+						!subValidationResult.hasProblems() &&
+						!bestMatch.validationResult.hasProblems()
+					) {
 						// no errors, both are equally good matches
 						bestMatch.matchingSchemas.merge(subMatchingSchemas);
-						bestMatch.validationResult.propertiesMatches += subValidationResult.propertiesMatches;
-						bestMatch.validationResult.propertiesValueMatches += subValidationResult.propertiesValueMatches;
-						bestMatch.validationResult.mergeProcessedProperties(subValidationResult);
+						bestMatch.validationResult.propertiesMatches +=
+							subValidationResult.propertiesMatches;
+						bestMatch.validationResult.propertiesValueMatches +=
+							subValidationResult.propertiesValueMatches;
+						bestMatch.validationResult.mergeProcessedProperties(
+							subValidationResult,
+						);
 					} else {
-						const compareResult = subValidationResult.compare(bestMatch.validationResult);
+						const compareResult = subValidationResult.compare(
+							bestMatch.validationResult,
+						);
 						if (compareResult > 0) {
 							// our node is the best matching so far
-							bestMatch = { schema: subSchema, validationResult: subValidationResult, matchingSchemas: subMatchingSchemas };
+							bestMatch = {
+								schema: subSchema,
+								validationResult: subValidationResult,
+								matchingSchemas: subMatchingSchemas,
+							};
 						} else if (compareResult === 0) {
 							// there's already a best matching but we are as good
 							bestMatch.matchingSchemas.merge(subMatchingSchemas);
-							bestMatch.validationResult.mergeEnumValues(subValidationResult);
+							bestMatch.validationResult.mergeEnumValues(
+								subValidationResult,
+							);
 						}
 					}
 				}
@@ -493,7 +723,9 @@ function validate(n: ASTNode | undefined, schema: JSONSchema, validationResult: 
 			if (matches.length > 1 && maxOneMatch) {
 				validationResult.problems.push({
 					location: { offset: node.offset, length: 1 },
-					message: l10n.t("Matches multiple schemas when only one must validate.")
+					message: l10n.t(
+						"Matches multiple schemas when only one must validate.",
+					),
 				});
 			}
 			if (bestMatch) {
@@ -513,18 +745,34 @@ function validate(n: ASTNode | undefined, schema: JSONSchema, validationResult: 
 			const subValidationResult = new ValidationResult();
 			const subMatchingSchemas = matchingSchemas.newSub();
 
-			validate(node, asSchema(schema), subValidationResult, subMatchingSchemas, context);
+			validate(
+				node,
+				asSchema(schema),
+				subValidationResult,
+				subMatchingSchemas,
+				context,
+			);
 
 			validationResult.merge(subValidationResult);
 			matchingSchemas.merge(subMatchingSchemas);
 		};
 
-		const testCondition = (ifSchema: JSONSchemaRef, thenSchema?: JSONSchemaRef, elseSchema?: JSONSchemaRef) => {
+		const testCondition = (
+			ifSchema: JSONSchemaRef,
+			thenSchema?: JSONSchemaRef,
+			elseSchema?: JSONSchemaRef,
+		) => {
 			const subSchema = asSchema(ifSchema);
 			const subValidationResult = new ValidationResult();
 			const subMatchingSchemas = matchingSchemas.newSub();
 
-			validate(node, subSchema, subValidationResult, subMatchingSchemas, context);
+			validate(
+				node,
+				subSchema,
+				subValidationResult,
+				subMatchingSchemas,
+				context,
+			);
 			matchingSchemas.merge(subMatchingSchemas);
 			validationResult.mergeProcessedProperties(subValidationResult);
 
@@ -539,7 +787,11 @@ function validate(n: ASTNode | undefined, schema: JSONSchema, validationResult: 
 
 		const ifSchema = asSchema(schema.if);
 		if (ifSchema) {
-			testCondition(ifSchema, asSchema(schema.then), asSchema(schema.else));
+			testCondition(
+				ifSchema,
+				asSchema(schema.then),
+				asSchema(schema.else),
+			);
 		}
 
 		if (Array.isArray(schema.enum)) {
@@ -557,7 +809,14 @@ function validate(n: ASTNode | undefined, schema: JSONSchema, validationResult: 
 				validationResult.problems.push({
 					location: { offset: node.offset, length: node.length },
 					code: ErrorCode.EnumValueMismatch,
-					message: schema.errorMessage || l10n.t('Value is not accepted. Valid values: {0}.', schema.enum.map(v => JSON.stringify(v)).join(', '))
+					message:
+						schema.errorMessage ||
+						l10n.t(
+							"Value is not accepted. Valid values: {0}.",
+							schema.enum
+								.map((v) => JSON.stringify(v))
+								.join(", "),
+						),
 				});
 			}
 		}
@@ -568,7 +827,12 @@ function validate(n: ASTNode | undefined, schema: JSONSchema, validationResult: 
 				validationResult.problems.push({
 					location: { offset: node.offset, length: node.length },
 					code: ErrorCode.EnumValueMismatch,
-					message: schema.errorMessage || l10n.t('Value must be {0}.', JSON.stringify(schema.const))
+					message:
+						schema.errorMessage ||
+						l10n.t(
+							"Value must be {0}.",
+							JSON.stringify(schema.const),
+						),
 				});
 				validationResult.enumValueMatch = false;
 			} else {
@@ -579,30 +843,40 @@ function validate(n: ASTNode | undefined, schema: JSONSchema, validationResult: 
 
 		let deprecationMessage = schema.deprecationMessage;
 		if (deprecationMessage || schema.deprecated) {
-			deprecationMessage = deprecationMessage || l10n.t('Value is deprecated');
-			let targetNode = node.parent?.type === 'property' ? node.parent : node;
+			deprecationMessage =
+				deprecationMessage || l10n.t("Value is deprecated");
+			let targetNode =
+				node.parent?.type === "property" ? node.parent : node;
 
 			validationResult.problems.push({
-				location: { offset: targetNode.offset, length: targetNode.length },
+				location: {
+					offset: targetNode.offset,
+					length: targetNode.length,
+				},
 				severity: DiagnosticSeverity.Warning,
 				message: deprecationMessage,
-				code: ErrorCode.Deprecated
+				code: ErrorCode.Deprecated,
 			});
 		}
 	}
 
-
-
 	function _validateNumberNode(node: NumberASTNode): void {
 		const val = node.value;
 
-		function normalizeFloats(float: number): { value: number, multiplier: number } | null {
-			const parts = /^(-?\d+)(?:\.(\d+))?(?:e([-+]\d+))?$/.exec(float.toString());
-			return parts && {
-				value: Number(parts[1] + (parts[2] || '')),
-				multiplier: (parts[2]?.length || 0) - (parseInt(parts[3]) || 0)
-			};
-		};
+		function normalizeFloats(
+			float: number,
+		): { value: number; multiplier: number } | null {
+			const parts = /^(-?\d+)(?:\.(\d+))?(?:e([-+]\d+))?$/.exec(
+				float.toString(),
+			);
+			return (
+				parts && {
+					value: Number(parts[1] + (parts[2] || "")),
+					multiplier:
+						(parts[2]?.length || 0) - (parseInt(parts[3]) || 0),
+				}
+			);
+		}
 		if (isNumber(schema.multipleOf)) {
 			let remainder: number = -1;
 			if (Number.isInteger(schema.multipleOf)) {
@@ -611,7 +885,11 @@ function validate(n: ASTNode | undefined, schema: JSONSchema, validationResult: 
 				let normMultipleOf = normalizeFloats(schema.multipleOf);
 				let normValue = normalizeFloats(val);
 				if (normMultipleOf && normValue) {
-					const multiplier = 10 ** Math.abs(normValue.multiplier - normMultipleOf.multiplier);
+					const multiplier =
+						10 **
+						Math.abs(
+							normValue.multiplier - normMultipleOf.multiplier,
+						);
 					if (normValue.multiplier < normMultipleOf.multiplier) {
 						normValue.value *= multiplier;
 					} else {
@@ -623,11 +901,17 @@ function validate(n: ASTNode | undefined, schema: JSONSchema, validationResult: 
 			if (remainder !== 0) {
 				validationResult.problems.push({
 					location: { offset: node.offset, length: node.length },
-					message: l10n.t('Value is not divisible by {0}.', schema.multipleOf)
+					message: l10n.t(
+						"Value is not divisible by {0}.",
+						schema.multipleOf,
+					),
 				});
 			}
 		}
-		function getExclusiveLimit(limit: number | undefined, exclusive: boolean | number | undefined): number | undefined {
+		function getExclusiveLimit(
+			limit: number | undefined,
+			exclusive: boolean | number | undefined,
+		): number | undefined {
 			if (isNumber(exclusive)) {
 				return exclusive;
 			}
@@ -636,119 +920,178 @@ function validate(n: ASTNode | undefined, schema: JSONSchema, validationResult: 
 			}
 			return undefined;
 		}
-		function getLimit(limit: number | undefined, exclusive: boolean | number | undefined): number | undefined {
+		function getLimit(
+			limit: number | undefined,
+			exclusive: boolean | number | undefined,
+		): number | undefined {
 			if (!isBoolean(exclusive) || !exclusive) {
 				return limit;
 			}
 			return undefined;
 		}
-		const exclusiveMinimum = getExclusiveLimit(schema.minimum, schema.exclusiveMinimum);
+		const exclusiveMinimum = getExclusiveLimit(
+			schema.minimum,
+			schema.exclusiveMinimum,
+		);
 		if (isNumber(exclusiveMinimum) && val <= exclusiveMinimum) {
 			validationResult.problems.push({
 				location: { offset: node.offset, length: node.length },
-				message: l10n.t('Value is below the exclusive minimum of {0}.', exclusiveMinimum)
+				message: l10n.t(
+					"Value is below the exclusive minimum of {0}.",
+					exclusiveMinimum,
+				),
 			});
 		}
-		const exclusiveMaximum = getExclusiveLimit(schema.maximum, schema.exclusiveMaximum);
+		const exclusiveMaximum = getExclusiveLimit(
+			schema.maximum,
+			schema.exclusiveMaximum,
+		);
 		if (isNumber(exclusiveMaximum) && val >= exclusiveMaximum) {
 			validationResult.problems.push({
 				location: { offset: node.offset, length: node.length },
-				message: l10n.t('Value is above the exclusive maximum of {0}.', exclusiveMaximum)
+				message: l10n.t(
+					"Value is above the exclusive maximum of {0}.",
+					exclusiveMaximum,
+				),
 			});
 		}
 		const minimum = getLimit(schema.minimum, schema.exclusiveMinimum);
 		if (isNumber(minimum) && val < minimum) {
 			validationResult.problems.push({
 				location: { offset: node.offset, length: node.length },
-				message: l10n.t('Value is below the minimum of {0}.', minimum)
+				message: l10n.t("Value is below the minimum of {0}.", minimum),
 			});
 		}
 		const maximum = getLimit(schema.maximum, schema.exclusiveMaximum);
 		if (isNumber(maximum) && val > maximum) {
 			validationResult.problems.push({
 				location: { offset: node.offset, length: node.length },
-				message: l10n.t('Value is above the maximum of {0}.', maximum)
+				message: l10n.t("Value is above the maximum of {0}.", maximum),
 			});
 		}
 	}
 
 	function _validateStringNode(node: StringASTNode): void {
-		if (isNumber(schema.minLength) && stringLength(node.value) < schema.minLength) {
+		if (
+			isNumber(schema.minLength) &&
+			stringLength(node.value) < schema.minLength
+		) {
 			validationResult.problems.push({
 				location: { offset: node.offset, length: node.length },
-				message: l10n.t('String is shorter than the minimum length of {0}.', schema.minLength)
+				message: l10n.t(
+					"String is shorter than the minimum length of {0}.",
+					schema.minLength,
+				),
 			});
 		}
 
-		if (isNumber(schema.maxLength) && stringLength(node.value) > schema.maxLength) {
+		if (
+			isNumber(schema.maxLength) &&
+			stringLength(node.value) > schema.maxLength
+		) {
 			validationResult.problems.push({
 				location: { offset: node.offset, length: node.length },
-				message: l10n.t('String is longer than the maximum length of {0}.', schema.maxLength)
+				message: l10n.t(
+					"String is longer than the maximum length of {0}.",
+					schema.maxLength,
+				),
 			});
 		}
 
 		if (isString(schema.pattern)) {
 			const regex = extendedRegExp(schema.pattern);
-			if (!(regex?.test(node.value))) {
+			if (!regex?.test(node.value)) {
 				validationResult.problems.push({
 					location: { offset: node.offset, length: node.length },
-					message: schema.patternErrorMessage || schema.errorMessage || l10n.t('String does not match the pattern of "{0}".', schema.pattern)
+					message:
+						schema.patternErrorMessage ||
+						schema.errorMessage ||
+						l10n.t(
+							'String does not match the pattern of "{0}".',
+							schema.pattern,
+						),
 				});
 			}
 		}
 
 		if (schema.format) {
 			switch (schema.format) {
-				case 'uri':
-				case 'uri-reference': {
-					let errorMessage;
-					if (!node.value) {
-						errorMessage = l10n.t('URI expected.');
-					} else {
-						const match = /^(([^:/?#]+?):)?(\/\/([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?/.exec(node.value);
-						if (!match) {
-							errorMessage = l10n.t('URI is expected.');
-						} else if (!match[2] && schema.format === 'uri') {
-							errorMessage = l10n.t('URI with a scheme is expected.');
+				case "uri":
+				case "uri-reference":
+					{
+						let errorMessage;
+						if (!node.value) {
+							errorMessage = l10n.t("URI expected.");
+						} else {
+							const match =
+								/^(([^:/?#]+?):)?(\/\/([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?/.exec(
+									node.value,
+								);
+							if (!match) {
+								errorMessage = l10n.t("URI is expected.");
+							} else if (!match[2] && schema.format === "uri") {
+								errorMessage = l10n.t(
+									"URI with a scheme is expected.",
+								);
+							}
+						}
+						if (errorMessage) {
+							validationResult.problems.push({
+								location: {
+									offset: node.offset,
+									length: node.length,
+								},
+								message:
+									schema.patternErrorMessage ||
+									schema.errorMessage ||
+									l10n.t(
+										"String is not a URI: {0}",
+										errorMessage,
+									),
+							});
 						}
 					}
-					if (errorMessage) {
-						validationResult.problems.push({
-							location: { offset: node.offset, length: node.length },
-							message: schema.patternErrorMessage || schema.errorMessage || l10n.t('String is not a URI: {0}', errorMessage)
-						});
-					}
-				}
 					break;
-				case 'color-hex':
-				case 'date-time':
-				case 'date':
-				case 'time':
-				case 'email':
-				case 'hostname':
-				case 'ipv4':
-				case 'ipv6':
+				case "color-hex":
+				case "date-time":
+				case "date":
+				case "time":
+				case "email":
+				case "hostname":
+				case "ipv4":
+				case "ipv6":
 					const format = formats[schema.format];
 					if (!node.value || !format.pattern.exec(node.value)) {
 						validationResult.problems.push({
-							location: { offset: node.offset, length: node.length },
-							message: schema.patternErrorMessage || schema.errorMessage || format.errorMessage
+							location: {
+								offset: node.offset,
+								length: node.length,
+							},
+							message:
+								schema.patternErrorMessage ||
+								schema.errorMessage ||
+								format.errorMessage,
 						});
 					}
 				default:
 			}
 		}
-
 	}
 	function _validateArrayNode(node: ArrayASTNode): void {
 		let prefixItemsSchemas: JSONSchemaRef[] | undefined;
 		let additionalItemSchema: JSONSchemaRef | undefined;
 		if (context.schemaDraft >= SchemaDraft.v2020_12) {
 			prefixItemsSchemas = schema.prefixItems;
-			additionalItemSchema = !Array.isArray(schema.items) ? schema.items : undefined;
+			additionalItemSchema = !Array.isArray(schema.items)
+				? schema.items
+				: undefined;
 		} else {
-			prefixItemsSchemas = Array.isArray(schema.items) ? schema.items : undefined;
-			additionalItemSchema = !Array.isArray(schema.items) ? schema.items : schema.additionalItems;
+			prefixItemsSchemas = Array.isArray(schema.items)
+				? schema.items
+				: undefined;
+			additionalItemSchema = !Array.isArray(schema.items)
+				? schema.items
+				: schema.additionalItems;
 		}
 		let index = 0;
 		if (prefixItemsSchemas !== undefined) {
@@ -759,18 +1102,27 @@ function validate(n: ASTNode | undefined, schema: JSONSchema, validationResult: 
 				const itemValidationResult = new ValidationResult();
 				const item = node.items[index];
 				if (item) {
-					validate(item, subSchema, itemValidationResult, matchingSchemas, context);
+					validate(
+						item,
+						subSchema,
+						itemValidationResult,
+						matchingSchemas,
+						context,
+					);
 					validationResult.mergePropertyMatch(itemValidationResult);
 				}
 				validationResult.processedProperties.add(String(index));
 			}
 		}
 		if (additionalItemSchema !== undefined && index < node.items.length) {
-			if (typeof additionalItemSchema === 'boolean') {
+			if (typeof additionalItemSchema === "boolean") {
 				if (additionalItemSchema === false) {
 					validationResult.problems.push({
 						location: { offset: node.offset, length: node.length },
-						message: l10n.t('Array has too many items according to schema. Expected {0} or fewer.', index)
+						message: l10n.t(
+							"Array has too many items according to schema. Expected {0} or fewer.",
+							index,
+						),
 					});
 				}
 				for (; index < node.items.length; index++) {
@@ -780,7 +1132,13 @@ function validate(n: ASTNode | undefined, schema: JSONSchema, validationResult: 
 			} else {
 				for (; index < node.items.length; index++) {
 					const itemValidationResult = new ValidationResult();
-					validate(node.items[index], additionalItemSchema, itemValidationResult, matchingSchemas, context);
+					validate(
+						node.items[index],
+						additionalItemSchema,
+						itemValidationResult,
+						matchingSchemas,
+						context,
+					);
 					validationResult.mergePropertyMatch(itemValidationResult);
 					validationResult.processedProperties.add(String(index));
 				}
@@ -793,7 +1151,13 @@ function validate(n: ASTNode | undefined, schema: JSONSchema, validationResult: 
 			for (let index = 0; index < node.items.length; index++) {
 				const item = node.items[index];
 				const itemValidationResult = new ValidationResult();
-				validate(item, containsSchema, itemValidationResult, NoOpSchemaCollector.instance, context);
+				validate(
+					item,
+					containsSchema,
+					itemValidationResult,
+					NoOpSchemaCollector.instance,
+					context,
+				);
 				if (!itemValidationResult.hasProblems()) {
 					containsCount++;
 					if (context.schemaDraft >= SchemaDraft.v2020_12) {
@@ -804,19 +1168,37 @@ function validate(n: ASTNode | undefined, schema: JSONSchema, validationResult: 
 			if (containsCount === 0 && !isNumber(schema.minContains)) {
 				validationResult.problems.push({
 					location: { offset: node.offset, length: node.length },
-					message: schema.errorMessage || l10n.t('Array does not contain required item.')
+					message:
+						schema.errorMessage ||
+						l10n.t("Array does not contain required item."),
 				});
 			}
-			if (isNumber(schema.minContains) && containsCount < schema.minContains) {
+			if (
+				isNumber(schema.minContains) &&
+				containsCount < schema.minContains
+			) {
 				validationResult.problems.push({
 					location: { offset: node.offset, length: node.length },
-					message: schema.errorMessage || l10n.t('Array has too few items that match the contains contraint. Expected {0} or more.', schema.minContains)
+					message:
+						schema.errorMessage ||
+						l10n.t(
+							"Array has too few items that match the contains contraint. Expected {0} or more.",
+							schema.minContains,
+						),
 				});
 			}
-			if (isNumber(schema.maxContains) && containsCount > schema.maxContains) {
+			if (
+				isNumber(schema.maxContains) &&
+				containsCount > schema.maxContains
+			) {
 				validationResult.problems.push({
 					location: { offset: node.offset, length: node.length },
-					message: schema.errorMessage || l10n.t('Array has too many items that match the contains contraint. Expected {0} or less.', schema.maxContains)
+					message:
+						schema.errorMessage ||
+						l10n.t(
+							"Array has too many items that match the contains contraint. Expected {0} or less.",
+							schema.maxContains,
+						),
 				});
 			}
 		}
@@ -827,13 +1209,26 @@ function validate(n: ASTNode | undefined, schema: JSONSchema, validationResult: 
 				if (!validationResult.processedProperties.has(String(i))) {
 					if (unevaluatedItems === false) {
 						validationResult.problems.push({
-							location: { offset: node.offset, length: node.length },
-							message: l10n.t('Item does not match any validation rule from the array.')
+							location: {
+								offset: node.offset,
+								length: node.length,
+							},
+							message: l10n.t(
+								"Item does not match any validation rule from the array.",
+							),
 						});
 					} else {
 						const itemValidationResult = new ValidationResult();
-						validate(node.items[i], <any>schema.unevaluatedItems, itemValidationResult, matchingSchemas, context);
-						validationResult.mergePropertyMatch(itemValidationResult);
+						validate(
+							node.items[i],
+							<any>schema.unevaluatedItems,
+							itemValidationResult,
+							matchingSchemas,
+							context,
+						);
+						validationResult.mergePropertyMatch(
+							itemValidationResult,
+						);
 					}
 				}
 				validationResult.processedProperties.add(String(i));
@@ -844,14 +1239,20 @@ function validate(n: ASTNode | undefined, schema: JSONSchema, validationResult: 
 		if (isNumber(schema.minItems) && node.items.length < schema.minItems) {
 			validationResult.problems.push({
 				location: { offset: node.offset, length: node.length },
-				message: l10n.t('Array has too few items. Expected {0} or more.', schema.minItems)
+				message: l10n.t(
+					"Array has too few items. Expected {0} or more.",
+					schema.minItems,
+				),
 			});
 		}
 
 		if (isNumber(schema.maxItems) && node.items.length > schema.maxItems) {
 			validationResult.problems.push({
 				location: { offset: node.offset, length: node.length },
-				message: l10n.t('Array has too many items. Expected {0} or fewer.', schema.maxItems)
+				message: l10n.t(
+					"Array has too many items. Expected {0} or fewer.",
+					schema.maxItems,
+				),
 			});
 		}
 
@@ -871,15 +1272,15 @@ function validate(n: ASTNode | undefined, schema: JSONSchema, validationResult: 
 			if (hasDuplicates()) {
 				validationResult.problems.push({
 					location: { offset: node.offset, length: node.length },
-					message: l10n.t('Array has duplicate items.')
+					message: l10n.t("Array has duplicate items."),
 				});
 			}
 		}
-
 	}
 
 	function _validateObjectNode(node: ObjectASTNode): void {
-		const seenKeys: { [key: string]: ASTNode | undefined } = Object.create(null);
+		const seenKeys: { [key: string]: ASTNode | undefined } =
+			Object.create(null);
 		const unprocessedProperties: Set<string> = new Set();
 		for (const propertyNode of node.properties) {
 			const key = propertyNode.keyNode.value;
@@ -890,11 +1291,19 @@ function validate(n: ASTNode | undefined, schema: JSONSchema, validationResult: 
 		if (Array.isArray(schema.required)) {
 			for (const propertyName of schema.required) {
 				if (!seenKeys[propertyName]) {
-					const keyNode = node.parent && node.parent.type === 'property' && node.parent.keyNode;
-					const location = keyNode ? { offset: keyNode.offset, length: keyNode.length } : { offset: node.offset, length: 1 };
+					const keyNode =
+						node.parent &&
+						node.parent.type === "property" &&
+						node.parent.keyNode;
+					const location = keyNode
+						? { offset: keyNode.offset, length: keyNode.length }
+						: { offset: node.offset, length: 1 };
 					validationResult.problems.push({
 						location: location,
-						message: l10n.t('Missing property "{0}".', propertyName)
+						message: l10n.t(
+							'Missing property "{0}".',
+							propertyName,
+						),
 					});
 				}
 			}
@@ -915,8 +1324,16 @@ function validate(n: ASTNode | undefined, schema: JSONSchema, validationResult: 
 						if (!propertySchema) {
 							const propertyNode = <PropertyASTNode>child.parent;
 							validationResult.problems.push({
-								location: { offset: propertyNode.keyNode.offset, length: propertyNode.keyNode.length },
-								message: schema.errorMessage || l10n.t('Property {0} is not allowed.', propertyName)
+								location: {
+									offset: propertyNode.keyNode.offset,
+									length: propertyNode.keyNode.length,
+								},
+								message:
+									schema.errorMessage ||
+									l10n.t(
+										"Property {0} is not allowed.",
+										propertyName,
+									),
 							});
 						} else {
 							validationResult.propertiesMatches++;
@@ -924,16 +1341,25 @@ function validate(n: ASTNode | undefined, schema: JSONSchema, validationResult: 
 						}
 					} else {
 						const propertyValidationResult = new ValidationResult();
-						validate(child, propertySchema, propertyValidationResult, matchingSchemas, context);
-						validationResult.mergePropertyMatch(propertyValidationResult);
+						validate(
+							child,
+							propertySchema,
+							propertyValidationResult,
+							matchingSchemas,
+							context,
+						);
+						validationResult.mergePropertyMatch(
+							propertyValidationResult,
+						);
 					}
 				}
-
 			}
 		}
 
 		if (schema.patternProperties) {
-			for (const propertyPattern of Object.keys(schema.patternProperties)) {
+			for (const propertyPattern of Object.keys(
+				schema.patternProperties,
+			)) {
 				const regex = extendedRegExp(propertyPattern);
 				if (regex) {
 					const processed = [];
@@ -942,22 +1368,44 @@ function validate(n: ASTNode | undefined, schema: JSONSchema, validationResult: 
 							processed.push(propertyName);
 							const child = seenKeys[propertyName];
 							if (child) {
-								const propertySchema = schema.patternProperties[propertyPattern];
+								const propertySchema =
+									schema.patternProperties[propertyPattern];
 								if (isBoolean(propertySchema)) {
 									if (!propertySchema) {
-										const propertyNode = <PropertyASTNode>child.parent;
+										const propertyNode = <PropertyASTNode>(
+											child.parent
+										);
 										validationResult.problems.push({
-											location: { offset: propertyNode.keyNode.offset, length: propertyNode.keyNode.length },
-											message: schema.errorMessage || l10n.t('Property {0} is not allowed.', propertyName)
+											location: {
+												offset: propertyNode.keyNode
+													.offset,
+												length: propertyNode.keyNode
+													.length,
+											},
+											message:
+												schema.errorMessage ||
+												l10n.t(
+													"Property {0} is not allowed.",
+													propertyName,
+												),
 										});
 									} else {
 										validationResult.propertiesMatches++;
 										validationResult.propertiesValueMatches++;
 									}
 								} else {
-									const propertyValidationResult = new ValidationResult();
-									validate(child, propertySchema, propertyValidationResult, matchingSchemas, context);
-									validationResult.mergePropertyMatch(propertyValidationResult);
+									const propertyValidationResult =
+										new ValidationResult();
+									validate(
+										child,
+										propertySchema,
+										propertyValidationResult,
+										matchingSchemas,
+										context,
+									);
+									validationResult.mergePropertyMatch(
+										propertyValidationResult,
+									);
 								}
 							}
 						}
@@ -966,7 +1414,6 @@ function validate(n: ASTNode | undefined, schema: JSONSchema, validationResult: 
 				}
 			}
 		}
-
 
 		const additionalProperties = schema.additionalProperties;
 		if (additionalProperties !== undefined) {
@@ -978,13 +1425,29 @@ function validate(n: ASTNode | undefined, schema: JSONSchema, validationResult: 
 						const propertyNode = <PropertyASTNode>child.parent;
 
 						validationResult.problems.push({
-							location: { offset: propertyNode.keyNode.offset, length: propertyNode.keyNode.length },
-							message: schema.errorMessage || l10n.t('Property {0} is not allowed.', propertyName)
+							location: {
+								offset: propertyNode.keyNode.offset,
+								length: propertyNode.keyNode.length,
+							},
+							message:
+								schema.errorMessage ||
+								l10n.t(
+									"Property {0} is not allowed.",
+									propertyName,
+								),
 						});
 					} else if (additionalProperties !== true) {
 						const propertyValidationResult = new ValidationResult();
-						validate(child, additionalProperties, propertyValidationResult, matchingSchemas, context);
-						validationResult.mergePropertyMatch(propertyValidationResult);
+						validate(
+							child,
+							additionalProperties,
+							propertyValidationResult,
+							matchingSchemas,
+							context,
+						);
+						validationResult.mergePropertyMatch(
+							propertyValidationResult,
+						);
 					}
 				}
 			}
@@ -1001,13 +1464,30 @@ function validate(n: ASTNode | undefined, schema: JSONSchema, validationResult: 
 							const propertyNode = <PropertyASTNode>child.parent;
 
 							validationResult.problems.push({
-								location: { offset: propertyNode.keyNode.offset, length: propertyNode.keyNode.length },
-								message: schema.errorMessage || l10n.t('Property {0} is not allowed.', propertyName)
+								location: {
+									offset: propertyNode.keyNode.offset,
+									length: propertyNode.keyNode.length,
+								},
+								message:
+									schema.errorMessage ||
+									l10n.t(
+										"Property {0} is not allowed.",
+										propertyName,
+									),
 							});
 						} else if (unevaluatedProperties !== true) {
-							const propertyValidationResult = new ValidationResult();
-							validate(child, unevaluatedProperties, propertyValidationResult, matchingSchemas, context);
-							validationResult.mergePropertyMatch(propertyValidationResult);
+							const propertyValidationResult =
+								new ValidationResult();
+							validate(
+								child,
+								unevaluatedProperties,
+								propertyValidationResult,
+								matchingSchemas,
+								context,
+							);
+							validationResult.mergePropertyMatch(
+								propertyValidationResult,
+							);
 						}
 					}
 				}
@@ -1019,7 +1499,10 @@ function validate(n: ASTNode | undefined, schema: JSONSchema, validationResult: 
 			if (node.properties.length > schema.maxProperties) {
 				validationResult.problems.push({
 					location: { offset: node.offset, length: node.length },
-					message: l10n.t('Object has more properties than limit of {0}.', schema.maxProperties)
+					message: l10n.t(
+						"Object has more properties than limit of {0}.",
+						schema.maxProperties,
+					),
 				});
 			}
 		}
@@ -1028,7 +1511,10 @@ function validate(n: ASTNode | undefined, schema: JSONSchema, validationResult: 
 			if (node.properties.length < schema.minProperties) {
 				validationResult.problems.push({
 					location: { offset: node.offset, length: node.length },
-					message: l10n.t('Object has fewer properties than the required number of {0}', schema.minProperties)
+					message: l10n.t(
+						"Object has fewer properties than the required number of {0}",
+						schema.minProperties,
+					),
 				});
 			}
 		}
@@ -1056,7 +1542,10 @@ function validate(n: ASTNode | undefined, schema: JSONSchema, validationResult: 
 			for (const key in schema.dependencies) {
 				const prop = seenKeys[key];
 				if (prop) {
-					_validatePropertyDependencies(key, schema.dependencies[key]);
+					_validatePropertyDependencies(
+						key,
+						schema.dependencies[key],
+					);
 				}
 			}
 		}
@@ -1066,18 +1555,34 @@ function validate(n: ASTNode | undefined, schema: JSONSchema, validationResult: 
 			for (const f of node.properties) {
 				const key = f.keyNode;
 				if (key) {
-					validate(key, propertyNames, validationResult, NoOpSchemaCollector.instance, context);
+					validate(
+						key,
+						propertyNames,
+						validationResult,
+						NoOpSchemaCollector.instance,
+						context,
+					);
 				}
 			}
 		}
 
-		function _validatePropertyDependencies(key: string, propertyDep: string[] | JSONSchemaRef) {
+		function _validatePropertyDependencies(
+			key: string,
+			propertyDep: string[] | JSONSchemaRef,
+		) {
 			if (Array.isArray(propertyDep)) {
 				for (const requiredProp of propertyDep) {
 					if (!seenKeys[requiredProp]) {
 						validationResult.problems.push({
-							location: { offset: node.offset, length: node.length },
-							message: l10n.t('Object is missing property {0} required by property {1}.', requiredProp, key)
+							location: {
+								offset: node.offset,
+								length: node.length,
+							},
+							message: l10n.t(
+								"Object is missing property {0} required by property {1}.",
+								requiredProp,
+								key,
+							),
 						});
 					} else {
 						validationResult.propertiesValueMatches++;
@@ -1087,23 +1592,33 @@ function validate(n: ASTNode | undefined, schema: JSONSchema, validationResult: 
 				const propertySchema = asSchema(propertyDep);
 				if (propertySchema) {
 					const propertyValidationResult = new ValidationResult();
-					validate(node, propertySchema, propertyValidationResult, matchingSchemas, context);
-					validationResult.mergePropertyMatch(propertyValidationResult);
+					validate(
+						node,
+						propertySchema,
+						propertyValidationResult,
+						matchingSchemas,
+						context,
+					);
+					validationResult.mergePropertyMatch(
+						propertyValidationResult,
+					);
 				}
 			}
 		}
 	}
 }
 
-
-export function parse(textDocument: TextDocument, config?: JSONDocumentConfig): JSONDocument {
-
+export function parse(
+	textDocument: TextDocument,
+	config?: JSONDocumentConfig,
+): JSONDocument {
 	const problems: Diagnostic[] = [];
 	let lastProblemOffset = -1;
 	const text = textDocument.getText();
 	const scanner = Json.createScanner(text, false);
 
-	const commentRanges: Range[] | undefined = config && config.collectComments ? [] : undefined;
+	const commentRanges: Range[] | undefined =
+		config && config.collectComments ? [] : undefined;
 
 	function _scanNext(): Json.SyntaxKind {
 		while (true) {
@@ -1113,7 +1628,17 @@ export function parse(textDocument: TextDocument, config?: JSONDocumentConfig): 
 				case Json.SyntaxKind.LineCommentTrivia:
 				case Json.SyntaxKind.BlockCommentTrivia:
 					if (Array.isArray(commentRanges)) {
-						commentRanges.push(Range.create(textDocument.positionAt(scanner.getTokenOffset()), textDocument.positionAt(scanner.getTokenOffset() + scanner.getTokenLength())));
+						commentRanges.push(
+							Range.create(
+								textDocument.positionAt(
+									scanner.getTokenOffset(),
+								),
+								textDocument.positionAt(
+									scanner.getTokenOffset() +
+										scanner.getTokenLength(),
+								),
+							),
+						);
 					}
 					break;
 				case Json.SyntaxKind.Trivia:
@@ -1133,16 +1658,38 @@ export function parse(textDocument: TextDocument, config?: JSONDocumentConfig): 
 		return false;
 	}
 
-	function _errorAtRange<T extends ASTNode>(message: string, code: ErrorCode, startOffset: number, endOffset: number, severity: DiagnosticSeverity = DiagnosticSeverity.Error): void {
-
+	function _errorAtRange<T extends ASTNode>(
+		message: string,
+		code: ErrorCode,
+		startOffset: number,
+		endOffset: number,
+		severity: DiagnosticSeverity = DiagnosticSeverity.Error,
+	): void {
 		if (problems.length === 0 || startOffset !== lastProblemOffset) {
-			const range = Range.create(textDocument.positionAt(startOffset), textDocument.positionAt(endOffset));
-			problems.push(Diagnostic.create(range, message, severity, code, textDocument.languageId));
+			const range = Range.create(
+				textDocument.positionAt(startOffset),
+				textDocument.positionAt(endOffset),
+			);
+			problems.push(
+				Diagnostic.create(
+					range,
+					message,
+					severity,
+					code,
+					textDocument.languageId,
+				),
+			);
 			lastProblemOffset = startOffset;
 		}
 	}
 
-	function _error<T extends ASTNodeImpl>(message: string, code: ErrorCode, node: T | undefined = undefined, skipUntilAfter: Json.SyntaxKind[] = [], skipUntil: Json.SyntaxKind[] = []): T | undefined {
+	function _error<T extends ASTNodeImpl>(
+		message: string,
+		code: ErrorCode,
+		node: T | undefined = undefined,
+		skipUntilAfter: Json.SyntaxKind[] = [],
+		skipUntil: Json.SyntaxKind[] = [],
+	): T | undefined {
 		let start = scanner.getTokenOffset();
 		let end = scanner.getTokenOffset() + scanner.getTokenLength();
 		if (start === end && start > 0) {
@@ -1175,29 +1722,50 @@ export function parse(textDocument: TextDocument, config?: JSONDocumentConfig): 
 	function _checkScanError(): boolean {
 		switch (scanner.getTokenError()) {
 			case Json.ScanError.InvalidUnicode:
-				_error(l10n.t('Invalid unicode sequence in string.'), ErrorCode.InvalidUnicode);
+				_error(
+					l10n.t("Invalid unicode sequence in string."),
+					ErrorCode.InvalidUnicode,
+				);
 				return true;
 			case Json.ScanError.InvalidEscapeCharacter:
-				_error(l10n.t('Invalid escape character in string.'), ErrorCode.InvalidEscapeCharacter);
+				_error(
+					l10n.t("Invalid escape character in string."),
+					ErrorCode.InvalidEscapeCharacter,
+				);
 				return true;
 			case Json.ScanError.UnexpectedEndOfNumber:
-				_error(l10n.t('Unexpected end of number.'), ErrorCode.UnexpectedEndOfNumber);
+				_error(
+					l10n.t("Unexpected end of number."),
+					ErrorCode.UnexpectedEndOfNumber,
+				);
 				return true;
 			case Json.ScanError.UnexpectedEndOfComment:
-				_error(l10n.t('Unexpected end of comment.'), ErrorCode.UnexpectedEndOfComment);
+				_error(
+					l10n.t("Unexpected end of comment."),
+					ErrorCode.UnexpectedEndOfComment,
+				);
 				return true;
 			case Json.ScanError.UnexpectedEndOfString:
-				_error(l10n.t('Unexpected end of string.'), ErrorCode.UnexpectedEndOfString);
+				_error(
+					l10n.t("Unexpected end of string."),
+					ErrorCode.UnexpectedEndOfString,
+				);
 				return true;
 			case Json.ScanError.InvalidCharacter:
-				_error(l10n.t('Invalid characters in string. Control characters must be escaped.'), ErrorCode.InvalidCharacter);
+				_error(
+					l10n.t(
+						"Invalid characters in string. Control characters must be escaped.",
+					),
+					ErrorCode.InvalidCharacter,
+				);
 				return true;
 		}
 		return false;
 	}
 
 	function _finalize<T extends ASTNodeImpl>(node: T, scanNext: boolean): T {
-		node.length = scanner.getTokenOffset() + scanner.getTokenLength() - node.offset;
+		node.length =
+			scanner.getTokenOffset() + scanner.getTokenLength() - node.offset;
 
 		if (scanNext) {
 			_scanNext();
@@ -1206,7 +1774,9 @@ export function parse(textDocument: TextDocument, config?: JSONDocumentConfig): 
 		return node;
 	}
 
-	function _parseArray(parent: ASTNode | undefined): ArrayASTNode | undefined {
+	function _parseArray(
+		parent: ASTNode | undefined,
+	): ArrayASTNode | undefined {
 		if (scanner.getToken() !== Json.SyntaxKind.OpenBracketToken) {
 			return undefined;
 		}
@@ -1215,25 +1785,42 @@ export function parse(textDocument: TextDocument, config?: JSONDocumentConfig): 
 
 		const count = 0;
 		let needsComma = false;
-		while (scanner.getToken() !== Json.SyntaxKind.CloseBracketToken && scanner.getToken() !== Json.SyntaxKind.EOF) {
+		while (
+			scanner.getToken() !== Json.SyntaxKind.CloseBracketToken &&
+			scanner.getToken() !== Json.SyntaxKind.EOF
+		) {
 			if (scanner.getToken() === Json.SyntaxKind.CommaToken) {
 				if (!needsComma) {
-					_error(l10n.t('Value expected'), ErrorCode.ValueExpected);
+					_error(l10n.t("Value expected"), ErrorCode.ValueExpected);
 				}
 				const commaOffset = scanner.getTokenOffset();
 				_scanNext(); // consume comma
 				if (scanner.getToken() === Json.SyntaxKind.CloseBracketToken) {
 					if (needsComma) {
-						_errorAtRange(l10n.t('Trailing comma'), ErrorCode.TrailingComma, commaOffset, commaOffset + 1);
+						_errorAtRange(
+							l10n.t("Trailing comma"),
+							ErrorCode.TrailingComma,
+							commaOffset,
+							commaOffset + 1,
+						);
 					}
 					continue;
 				}
 			} else if (needsComma) {
-				_error(l10n.t('Expected comma'), ErrorCode.CommaExpected);
+				_error(l10n.t("Expected comma"), ErrorCode.CommaExpected);
 			}
 			const item = _parseValue(node);
 			if (!item) {
-				_error(l10n.t('Value expected'), ErrorCode.ValueExpected, undefined, [], [Json.SyntaxKind.CloseBracketToken, Json.SyntaxKind.CommaToken]);
+				_error(
+					l10n.t("Value expected"),
+					ErrorCode.ValueExpected,
+					undefined,
+					[],
+					[
+						Json.SyntaxKind.CloseBracketToken,
+						Json.SyntaxKind.CommaToken,
+					],
+				);
 			} else {
 				node.items.push(item);
 			}
@@ -1241,7 +1828,11 @@ export function parse(textDocument: TextDocument, config?: JSONDocumentConfig): 
 		}
 
 		if (scanner.getToken() !== Json.SyntaxKind.CloseBracketToken) {
-			return _error(l10n.t('Expected comma or closing bracket'), ErrorCode.CommaOrCloseBacketExpected, node);
+			return _error(
+				l10n.t("Expected comma or closing bracket"),
+				ErrorCode.CommaOrCloseBacketExpected,
+				node,
+			);
 		}
 
 		return _finalize(node, true);
@@ -1249,14 +1840,28 @@ export function parse(textDocument: TextDocument, config?: JSONDocumentConfig): 
 
 	const keyPlaceholder = new StringASTNodeImpl(undefined, 0, 0);
 
-	function _parseProperty(parent: ObjectASTNode | undefined, keysSeen: { [key: string]: (PropertyASTNode | boolean) }): PropertyASTNode | undefined {
-		const node = new PropertyASTNodeImpl(parent, scanner.getTokenOffset(), keyPlaceholder);
+	function _parseProperty(
+		parent: ObjectASTNode | undefined,
+		keysSeen: { [key: string]: PropertyASTNode | boolean },
+	): PropertyASTNode | undefined {
+		const node = new PropertyASTNodeImpl(
+			parent,
+			scanner.getTokenOffset(),
+			keyPlaceholder,
+		);
 		let key = _parseString(node);
 		if (!key) {
 			if (scanner.getToken() === Json.SyntaxKind.Unknown) {
 				// give a more helpful error message
-				_error(l10n.t('Property keys must be doublequoted'), ErrorCode.PropertyKeysMustBeDoublequoted);
-				const keyNode = new StringASTNodeImpl(node, scanner.getTokenOffset(), scanner.getTokenLength());
+				_error(
+					l10n.t("Property keys must be doublequoted"),
+					ErrorCode.PropertyKeysMustBeDoublequoted,
+				);
+				const keyNode = new StringASTNodeImpl(
+					node,
+					scanner.getTokenOffset(),
+					scanner.getTokenLength(),
+				);
 				keyNode.value = scanner.getTokenValue();
 				key = keyNode;
 				_scanNext(); // consume Unknown
@@ -1271,9 +1876,21 @@ export function parse(textDocument: TextDocument, config?: JSONDocumentConfig): 
 		if (key.value !== "//") {
 			const seen = keysSeen[key.value];
 			if (seen) {
-				_errorAtRange(l10n.t("Duplicate object key"), ErrorCode.DuplicateKey, node.keyNode.offset, node.keyNode.offset + node.keyNode.length, DiagnosticSeverity.Warning);
+				_errorAtRange(
+					l10n.t("Duplicate object key"),
+					ErrorCode.DuplicateKey,
+					node.keyNode.offset,
+					node.keyNode.offset + node.keyNode.length,
+					DiagnosticSeverity.Warning,
+				);
 				if (isObject(seen)) {
-					_errorAtRange(l10n.t("Duplicate object key"), ErrorCode.DuplicateKey, seen.keyNode.offset, seen.keyNode.offset + seen.keyNode.length, DiagnosticSeverity.Warning);
+					_errorAtRange(
+						l10n.t("Duplicate object key"),
+						ErrorCode.DuplicateKey,
+						seen.keyNode.offset,
+						seen.keyNode.offset + seen.keyNode.length,
+						DiagnosticSeverity.Warning,
+					);
 				}
 				keysSeen[key.value] = true; // if the same key is duplicate again, avoid duplicate error reporting
 			} else {
@@ -1285,22 +1902,34 @@ export function parse(textDocument: TextDocument, config?: JSONDocumentConfig): 
 			node.colonOffset = scanner.getTokenOffset();
 			_scanNext(); // consume ColonToken
 		} else {
-			_error(l10n.t('Colon expected'), ErrorCode.ColonExpected);
-			if (scanner.getToken() === Json.SyntaxKind.StringLiteral && textDocument.positionAt(key.offset + key.length).line < textDocument.positionAt(scanner.getTokenOffset()).line) {
+			_error(l10n.t("Colon expected"), ErrorCode.ColonExpected);
+			if (
+				scanner.getToken() === Json.SyntaxKind.StringLiteral &&
+				textDocument.positionAt(key.offset + key.length).line <
+					textDocument.positionAt(scanner.getTokenOffset()).line
+			) {
 				node.length = key.length;
 				return node;
 			}
 		}
 		const value = _parseValue(node);
 		if (!value) {
-			return _error(l10n.t('Value expected'), ErrorCode.ValueExpected, node, [], [Json.SyntaxKind.CloseBraceToken, Json.SyntaxKind.CommaToken]);
+			return _error(
+				l10n.t("Value expected"),
+				ErrorCode.ValueExpected,
+				node,
+				[],
+				[Json.SyntaxKind.CloseBraceToken, Json.SyntaxKind.CommaToken],
+			);
 		}
 		node.valueNode = value;
 		node.length = value.offset + value.length - node.offset;
 		return node;
 	}
 
-	function _parseObject(parent: ASTNode | undefined): ObjectASTNode | undefined {
+	function _parseObject(
+		parent: ASTNode | undefined,
+	): ObjectASTNode | undefined {
 		if (scanner.getToken() !== Json.SyntaxKind.OpenBraceToken) {
 			return undefined;
 		}
@@ -1309,25 +1938,45 @@ export function parse(textDocument: TextDocument, config?: JSONDocumentConfig): 
 		_scanNext(); // consume OpenBraceToken
 		let needsComma = false;
 
-		while (scanner.getToken() !== Json.SyntaxKind.CloseBraceToken && scanner.getToken() !== Json.SyntaxKind.EOF) {
+		while (
+			scanner.getToken() !== Json.SyntaxKind.CloseBraceToken &&
+			scanner.getToken() !== Json.SyntaxKind.EOF
+		) {
 			if (scanner.getToken() === Json.SyntaxKind.CommaToken) {
 				if (!needsComma) {
-					_error(l10n.t('Property expected'), ErrorCode.PropertyExpected);
+					_error(
+						l10n.t("Property expected"),
+						ErrorCode.PropertyExpected,
+					);
 				}
 				const commaOffset = scanner.getTokenOffset();
 				_scanNext(); // consume comma
 				if (scanner.getToken() === Json.SyntaxKind.CloseBraceToken) {
 					if (needsComma) {
-						_errorAtRange(l10n.t('Trailing comma'), ErrorCode.TrailingComma, commaOffset, commaOffset + 1);
+						_errorAtRange(
+							l10n.t("Trailing comma"),
+							ErrorCode.TrailingComma,
+							commaOffset,
+							commaOffset + 1,
+						);
 					}
 					continue;
 				}
 			} else if (needsComma) {
-				_error(l10n.t('Expected comma'), ErrorCode.CommaExpected);
+				_error(l10n.t("Expected comma"), ErrorCode.CommaExpected);
 			}
 			const property = _parseProperty(node, keysSeen);
 			if (!property) {
-				_error(l10n.t('Property expected'), ErrorCode.PropertyExpected, undefined, [], [Json.SyntaxKind.CloseBraceToken, Json.SyntaxKind.CommaToken]);
+				_error(
+					l10n.t("Property expected"),
+					ErrorCode.PropertyExpected,
+					undefined,
+					[],
+					[
+						Json.SyntaxKind.CloseBraceToken,
+						Json.SyntaxKind.CommaToken,
+					],
+				);
 			} else {
 				node.properties.push(property);
 			}
@@ -1335,12 +1984,18 @@ export function parse(textDocument: TextDocument, config?: JSONDocumentConfig): 
 		}
 
 		if (scanner.getToken() !== Json.SyntaxKind.CloseBraceToken) {
-			return _error(l10n.t('Expected comma or closing brace'), ErrorCode.CommaOrCloseBraceExpected, node);
+			return _error(
+				l10n.t("Expected comma or closing brace"),
+				ErrorCode.CommaOrCloseBraceExpected,
+				node,
+			);
 		}
 		return _finalize(node, true);
 	}
 
-	function _parseString(parent: ASTNode | undefined): StringASTNode | undefined {
+	function _parseString(
+		parent: ASTNode | undefined,
+	): StringASTNode | undefined {
 		if (scanner.getToken() !== Json.SyntaxKind.StringLiteral) {
 			return undefined;
 		}
@@ -1351,7 +2006,9 @@ export function parse(textDocument: TextDocument, config?: JSONDocumentConfig): 
 		return _finalize(node, true);
 	}
 
-	function _parseNumber(parent: ASTNode | undefined): NumberASTNode | undefined {
+	function _parseNumber(
+		parent: ASTNode | undefined,
+	): NumberASTNode | undefined {
 		if (scanner.getToken() !== Json.SyntaxKind.NumericLiteral) {
 			return undefined;
 		}
@@ -1362,13 +2019,21 @@ export function parse(textDocument: TextDocument, config?: JSONDocumentConfig): 
 			try {
 				const numberValue = JSON.parse(tokenValue);
 				if (!isNumber(numberValue)) {
-					return _error(l10n.t('Invalid number format.'), ErrorCode.Undefined, node);
+					return _error(
+						l10n.t("Invalid number format."),
+						ErrorCode.Undefined,
+						node,
+					);
 				}
 				node.value = numberValue;
 			} catch (e) {
-				return _error(l10n.t('Invalid number format.'), ErrorCode.Undefined, node);
+				return _error(
+					l10n.t("Invalid number format."),
+					ErrorCode.Undefined,
+					node,
+				);
 			}
-			node.isInteger = tokenValue.indexOf('.') === -1;
+			node.isInteger = tokenValue.indexOf(".") === -1;
 		}
 		return _finalize(node, true);
 	}
@@ -1377,18 +2042,41 @@ export function parse(textDocument: TextDocument, config?: JSONDocumentConfig): 
 		let node: ASTNodeImpl;
 		switch (scanner.getToken()) {
 			case Json.SyntaxKind.NullKeyword:
-				return _finalize(new NullASTNodeImpl(parent, scanner.getTokenOffset()), true);
+				return _finalize(
+					new NullASTNodeImpl(parent, scanner.getTokenOffset()),
+					true,
+				);
 			case Json.SyntaxKind.TrueKeyword:
-				return _finalize(new BooleanASTNodeImpl(parent, true, scanner.getTokenOffset()), true);
+				return _finalize(
+					new BooleanASTNodeImpl(
+						parent,
+						true,
+						scanner.getTokenOffset(),
+					),
+					true,
+				);
 			case Json.SyntaxKind.FalseKeyword:
-				return _finalize(new BooleanASTNodeImpl(parent, false, scanner.getTokenOffset()), true);
+				return _finalize(
+					new BooleanASTNodeImpl(
+						parent,
+						false,
+						scanner.getTokenOffset(),
+					),
+					true,
+				);
 			default:
 				return undefined;
 		}
 	}
 
 	function _parseValue(parent: ASTNode | undefined): ASTNode | undefined {
-		return _parseArray(parent) || _parseObject(parent) || _parseString(parent) || _parseNumber(parent) || _parseLiteral(parent);
+		return (
+			_parseArray(parent) ||
+			_parseObject(parent) ||
+			_parseString(parent) ||
+			_parseNumber(parent) ||
+			_parseLiteral(parent)
+		);
 	}
 
 	let _root: ASTNode | undefined = undefined;
@@ -1396,9 +2084,12 @@ export function parse(textDocument: TextDocument, config?: JSONDocumentConfig): 
 	if (token !== Json.SyntaxKind.EOF) {
 		_root = _parseValue(_root);
 		if (!_root) {
-			_error(l10n.t('Expected a JSON object, array or literal.'), ErrorCode.Undefined);
+			_error(
+				l10n.t("Expected a JSON object, array or literal."),
+				ErrorCode.Undefined,
+			);
 		} else if (scanner.getToken() !== Json.SyntaxKind.EOF) {
-			_error(l10n.t('End of file expected.'), ErrorCode.Undefined);
+			_error(l10n.t("End of file expected."), ErrorCode.Undefined);
 		}
 	}
 	return new JSONDocument(_root, problems, commentRanges);

@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-*  Copyright (c) Microsoft Corporation. All rights reserved.
-*  Licensed under the MIT License. See License.txt in the project root for license information.
-*--------------------------------------------------------------------------------------------*/
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
 
 export function startsWith(haystack: string, needle: string): boolean {
 	if (haystack.length < needle.length) {
@@ -32,11 +32,13 @@ export function endsWith(haystack: string, needle: string): boolean {
 }
 
 export function convertSimple2RegExpPattern(pattern: string): string {
-	return pattern.replace(/[\-\\\{\}\+\?\|\^\$\.\,\[\]\(\)\#\s]/g, '\\$&').replace(/[\*]/g, '.*');
+	return pattern
+		.replace(/[\-\\\{\}\+\?\|\^\$\.\,\[\]\(\)\#\s]/g, "\\$&")
+		.replace(/[\*]/g, ".*");
 }
 
 export function repeat(value: string, count: number) {
-	let s = '';
+	let s = "";
 	while (count > 0) {
 		if ((count & 1) === 1) {
 			s += value;
@@ -48,13 +50,13 @@ export function repeat(value: string, count: number) {
 }
 
 export function extendedRegExp(pattern: string): RegExp | undefined {
-	let flags = '';
-	if (startsWith(pattern, '(?i)')) {
+	let flags = "";
+	if (startsWith(pattern, "(?i)")) {
 		pattern = pattern.substring(4);
-		flags = 'i';
+		flags = "i";
 	}
 	try {
-		return new RegExp(pattern, flags + 'u');
+		return new RegExp(pattern, flags + "u");
 	} catch (e) {
 		// could be an exception due to the 'u ' flag
 		try {
@@ -73,7 +75,7 @@ export function stringLength(str: string) {
 		count++;
 		// obtain the i-th 16-bit
 		const code = str.charCodeAt(i);
-		if (0xD800 <= code && code <= 0xDBFF) {
+		if (0xd800 <= code && code <= 0xdbff) {
 			// if the i-th 16bit is an upper surrogate
 			// skip the next 16 bits (lower surrogate)
 			i++;

@@ -3,21 +3,34 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { DocumentLink } from 'vscode-languageserver-types';
-import { TextDocument, ASTNode, PropertyASTNode, Range } from '../jsonLanguageTypes';
-import { JSONDocument } from '../parser/jsonParser';
+import { DocumentLink } from "vscode-languageserver-types";
 
-export function findLinks(document: TextDocument, doc: JSONDocument): PromiseLike<DocumentLink[]> {
+import {
+	ASTNode,
+	PropertyASTNode,
+	Range,
+	TextDocument,
+} from "../jsonLanguageTypes";
+import { JSONDocument } from "../parser/jsonParser";
+
+export function findLinks(
+	document: TextDocument,
+	doc: JSONDocument,
+): PromiseLike<DocumentLink[]> {
 	const links: DocumentLink[] = [];
-	doc.visit(node => {
-		if (node.type === "property" && node.keyNode.value === "$ref" && node.valueNode?.type === 'string') {
+	doc.visit((node) => {
+		if (
+			node.type === "property" &&
+			node.keyNode.value === "$ref" &&
+			node.valueNode?.type === "string"
+		) {
 			const path = node.valueNode.value;
 			const targetNode = findTargetNode(doc, path);
 			if (targetNode) {
 				const targetPos = document.positionAt(targetNode.offset);
 				links.push({
 					target: `${document.uri}#${targetPos.line + 1},${targetPos.character + 1}`,
-					range: createRange(document, node.valueNode)
+					range: createRange(document, node.valueNode),
 				});
 			}
 		}
@@ -27,7 +40,10 @@ export function findLinks(document: TextDocument, doc: JSONDocument): PromiseLik
 }
 
 function createRange(document: TextDocument, node: ASTNode): Range {
-	return Range.create(document.positionAt(node.offset + 1), document.positionAt(node.offset + node.length - 1));
+	return Range.create(
+		document.positionAt(node.offset + 1),
+		document.positionAt(node.offset + node.length - 1),
+	);
 }
 
 function findTargetNode(doc: JSONDocument, path: string): ASTNode | null {
@@ -38,7 +54,10 @@ function findTargetNode(doc: JSONDocument, path: string): ASTNode | null {
 	return findNode(tokens, doc.root);
 }
 
-function findNode(pointer: string[], node: ASTNode | null | undefined): ASTNode | null {
+function findNode(
+	pointer: string[],
+	node: ASTNode | null | undefined,
+): ASTNode | null {
 	if (!node) {
 		return null;
 	}
@@ -47,13 +66,15 @@ function findNode(pointer: string[], node: ASTNode | null | undefined): ASTNode 
 	}
 
 	const token: string = pointer.shift() as string;
-	if (node && node.type === 'object') {
-		const propertyNode: PropertyASTNode | undefined = node.properties.find((propertyNode) => propertyNode.keyNode.value === token);
+	if (node && node.type === "object") {
+		const propertyNode: PropertyASTNode | undefined = node.properties.find(
+			(propertyNode) => propertyNode.keyNode.value === token,
+		);
 		if (!propertyNode) {
 			return null;
 		}
 		return findNode(pointer, propertyNode.valueNode);
-	} else if (node && node.type === 'array') {
+	} else if (node && node.type === "array") {
 		if (token.match(/^(0|[1-9][0-9]*)$/)) {
 			const index = Number.parseInt(token);
 			const arrayItem = node.items[index];
@@ -71,7 +92,7 @@ function parseJSONPointer(path: string): string[] | null {
 		return [];
 	}
 
-	if (path[0] !== '#' || path[1] !== '/') {
+	if (path[0] !== "#" || path[1] !== "/") {
 		return null;
 	}
 
@@ -79,5 +100,5 @@ function parseJSONPointer(path: string): string[] | null {
 }
 
 function unescape(str: string): string {
-	return str.replace(/~1/g, '/').replace(/~0/g, '~');
+	return str.replace(/~1/g, "/").replace(/~0/g, "~");
 }

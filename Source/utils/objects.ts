@@ -1,27 +1,31 @@
 /*---------------------------------------------------------------------------------------------
-*  Copyright (c) Microsoft Corporation. All rights reserved.
-*  Licensed under the MIT License. See License.txt in the project root for license information.
-*--------------------------------------------------------------------------------------------*/
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
 
 export function equals(one: any, other: any): boolean {
 	if (one === other) {
 		return true;
 	}
-	if (one === null || one === undefined || other === null || other === undefined) {
+	if (
+		one === null ||
+		one === undefined ||
+		other === null ||
+		other === undefined
+	) {
 		return false;
 	}
 	if (typeof one !== typeof other) {
 		return false;
 	}
-	if (typeof one !== 'object') {
+	if (typeof one !== "object") {
 		return false;
 	}
-	if ((Array.isArray(one)) !== (Array.isArray(other))) {
+	if (Array.isArray(one) !== Array.isArray(other)) {
 		return false;
 	}
 
-	let i: number,
-		key: string;
+	let i: number, key: string;
 
 	if (Array.isArray(one)) {
 		if (one.length !== other.length) {
@@ -57,21 +61,21 @@ export function equals(one: any, other: any): boolean {
 }
 
 export function isNumber(val: any): val is number {
-	return typeof val === 'number';
+	return typeof val === "number";
 }
 
 export function isDefined(val: any): val is object {
-	return typeof val !== 'undefined';
+	return typeof val !== "undefined";
 }
 
 export function isBoolean(val: any): val is boolean {
-	return typeof val === 'boolean';
+	return typeof val === "boolean";
 }
 
 export function isString(val: any): val is string {
-	return typeof val === 'string';
+	return typeof val === "string";
 }
 
 export function isObject(val: any): val is object {
-	return typeof val === 'object' && val !== null && !Array.isArray(val);
+	return typeof val === "object" && val !== null && !Array.isArray(val);
 }

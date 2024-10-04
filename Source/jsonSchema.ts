@@ -74,7 +74,13 @@ export interface JSONSchema {
 
 	// VSCode extensions
 
-	defaultSnippets?: { label?: string; description?: string; markdownDescription?: string; body?: any; bodyText?: string; }[]; // VSCode extension: body: a object that will be converted to a JSON string. bodyText: text with \t and \n
+	defaultSnippets?: {
+		label?: string;
+		description?: string;
+		markdownDescription?: string;
+		body?: any;
+		bodyText?: string;
+	}[]; // VSCode extension: body: a object that will be converted to a JSON string. bodyText: text with \t and \n
 	errorMessage?: string; // VSCode extension
 	patternErrorMessage?: string; // VSCode extension
 	deprecationMessage?: string; // VSCode extension
@@ -82,7 +88,7 @@ export interface JSONSchema {
 	markdownEnumDescriptions?: string[]; // VSCode extension
 	markdownDescription?: string; // VSCode extension
 	doNotSuggest?: boolean; // VSCode extension
-	suggestSortText?: string;  // VSCode extension
+	suggestSortText?: string; // VSCode extension
 	allowComments?: boolean; // VSCode extension
 	allowTrailingCommas?: boolean; // VSCode extension
 }
