@@ -20,6 +20,7 @@ export function getSelectionRanges(
 ): SelectionRange[] {
 	function getSelectionRange(position: Position): SelectionRange {
 		let offset = document.offsetAt(position);
+
 		let node = doc.getNodeFromOffset(offset, true);
 
 		const result: Range[] = [];
@@ -32,13 +33,16 @@ export function getSelectionRanges(
 					// range without ", [ or {
 					const cStart = node.offset + 1,
 						cEnd = node.offset + node.length - 1;
+
 					if (cStart < cEnd && offset >= cStart && offset <= cEnd) {
 						result.push(newRange(cStart, cEnd));
 					}
 					result.push(
 						newRange(node.offset, node.offset + node.length),
 					);
+
 					break;
+
 				case "number":
 				case "boolean":
 				case "null":
@@ -46,6 +50,7 @@ export function getSelectionRanges(
 					result.push(
 						newRange(node.offset, node.offset + node.length),
 					);
+
 					break;
 			}
 			if (
@@ -56,6 +61,7 @@ export function getSelectionRanges(
 					node.offset + node.length,
 					SyntaxKind.CommaToken,
 				);
+
 				if (afterCommaOffset !== -1) {
 					result.push(newRange(node.offset, afterCommaOffset));
 				}
@@ -63,6 +69,7 @@ export function getSelectionRanges(
 			node = node.parent;
 		}
 		let current: SelectionRange | undefined = undefined;
+
 		for (let index = result.length - 1; index >= 0; index--) {
 			current = SelectionRange.create(result[index], current);
 		}
@@ -86,7 +93,9 @@ export function getSelectionRanges(
 		expectedToken: SyntaxKind,
 	): number {
 		scanner.setPosition(offset);
+
 		let token = scanner.scan();
+
 		if (token === expectedToken) {
 			return scanner.getTokenOffset() + scanner.getTokenLength();
 		}

@@ -463,6 +463,7 @@ export const schemaContributions: ISchemaContributions = {
 		},
 	},
 };
+
 const descriptions: { [prop: string]: string } = {
 	id: l10n.t("A unique identifier for the schema."),
 	$schema: l10n.t("The schema to verify this document against."),
@@ -566,12 +567,15 @@ const descriptions: { [prop: string]: string } = {
 
 for (const schemaName in schemaContributions.schemas) {
 	const schema = schemaContributions.schemas[schemaName];
+
 	for (const property in schema.properties) {
 		let propertyObject = schema.properties[property];
+
 		if (typeof propertyObject === "boolean") {
 			propertyObject = schema.properties[property] = {};
 		}
 		const description = descriptions[property];
+
 		if (description) {
 			propertyObject["description"] = description;
 		}

@@ -25,28 +25,35 @@ export function sort(
 		...formattingOptions,
 		keepLines: false, // keepLines must be false so that the properties are on separate lines for the sorting
 	};
+
 	const formattedJsonString: string = TextDocument.applyEdits(
 		documentToSort,
 		format(documentToSort, options, undefined),
 	);
+
 	const formattedJsonDocument = TextDocument.create(
 		"test://test.json",
 		"json",
 		0,
 		formattedJsonString,
 	);
+
 	const jsonPropertyTree: PropertyTree = findJsoncPropertyTree(
 		formattedJsonDocument,
 	);
+
 	const sortedJsonDocument = sortJsoncDocument(
 		formattedJsonDocument,
 		jsonPropertyTree,
 	);
+
 	const edits: TextEdit[] = format(sortedJsonDocument, options, undefined);
+
 	const sortedAndFormattedJsonDocument = TextDocument.applyEdits(
 		sortedJsonDocument,
 		edits,
 	);
+
 	return [
 		TextEdit.replace(
 			Range.create(
@@ -60,6 +67,7 @@ export function sort(
 
 function findJsoncPropertyTree(formattedDocument: TextDocument) {
 	const formattedString = formattedDocument.getText();
+
 	const scanner: JSONScanner = createScanner(formattedString, false);
 
 	// The tree that will be returned
@@ -227,6 +235,7 @@ function findJsoncPropertyTree(formattedDocument: TextDocument) {
 				currentProperty!.type = Container.Array;
 				beginningLineNumber = scanner.getTokenStartLine();
 				beginningLineNumber++;
+
 				break;
 			}
 
@@ -260,6 +269,7 @@ function findJsoncPropertyTree(formattedDocument: TextDocument) {
 				currentTree = currentProperty;
 				beginningLineNumber = scanner.getTokenStartLine();
 				beginningLineNumber++;
+
 				break;
 			}
 
@@ -291,6 +301,7 @@ function findJsoncPropertyTree(formattedDocument: TextDocument) {
 
 				rootTree.endLineNumber = endLineNumber;
 				beginningLineNumber = endLineNumber + 1;
+
 				break;
 			}
 			case SyntaxKind.CloseBraceToken: {
@@ -321,6 +332,7 @@ function findJsoncPropertyTree(formattedDocument: TextDocument) {
 
 				rootTree.endLineNumber = scanner.getTokenStartLine();
 				beginningLineNumber = endLineNumber + 1;
+
 				break;
 			}
 
@@ -363,6 +375,7 @@ function findJsoncPropertyTree(formattedDocument: TextDocument) {
 				}
 
 				beginningLineNumber = endLineNumber + 1;
+
 				break;
 			}
 
@@ -457,6 +470,7 @@ function sortJsoncDocument(
 		0,
 		jsonDocument.getText(),
 	);
+
 	const queueToSort: SortingRange[] = [];
 	updateSortingQueue(
 		queueToSort,
@@ -466,16 +480,21 @@ function sortJsoncDocument(
 
 	while (queueToSort.length > 0) {
 		const dataToSort = queueToSort.shift();
+
 		const propertyTreeArray: PropertyTree[] = dataToSort!.propertyTreeArray;
+
 		let beginningLineNumber = dataToSort!.beginningLineNumber;
 
 		for (let i = 0; i < propertyTreeArray.length; i++) {
 			const propertyTree = propertyTreeArray[i];
+
 			const range: Range = Range.create(
 				Position.create(propertyTree.beginningLineNumber!, 0),
 				Position.create(propertyTree.endLineNumber! + 1, 0),
 			);
+
 			const jsonContentToReplace = jsonDocument.getText(range);
+
 			const jsonDocumentToReplace = TextDocument.create(
 				"test://test.json",
 				"json",
@@ -490,7 +509,9 @@ function sortJsoncDocument(
 				const lineWhereToAddComma =
 					propertyTree.lineWhereToAddComma! -
 					propertyTree.beginningLineNumber!;
+
 				const indexWhereToAddComma = propertyTree.indexWhereToAddComa!;
+
 				const edit: TextDocumentContentChangeEvent = {
 					range: Range.create(
 						Position.create(
@@ -510,9 +531,12 @@ function sortJsoncDocument(
 				i === propertyTreeArray.length - 1
 			) {
 				const commaIndex = propertyTree.commaIndex!;
+
 				const commaLine = propertyTree.commaLine!;
+
 				const lineWhereToRemoveComma =
 					commaLine - propertyTree.beginningLineNumber!;
+
 				const edit: TextDocumentContentChangeEvent = {
 					range: Range.create(
 						Position.create(lineWhereToRemoveComma, commaIndex),
@@ -526,6 +550,7 @@ function sortJsoncDocument(
 				propertyTree.endLineNumber! -
 				propertyTree.beginningLineNumber! +
 				1;
+
 			const edit: TextDocumentContentChangeEvent = {
 				range: Range.create(
 					Position.create(beginningLineNumber, 0),
@@ -544,7 +569,9 @@ function sortJsoncDocument(
 function sortPropertiesCaseSensitive(properties: PropertyTree[]): void {
 	properties.sort((a, b) => {
 		const aName = a.propertyName ?? "";
+
 		const bName = b.propertyName ?? "";
+
 		return aName < bName ? -1 : aName > bName ? 1 : 0;
 	});
 }
@@ -559,6 +586,7 @@ function updateSortingQueue(
 	}
 	if (propertyTree.type === Container.Object) {
 		let minimumBeginningLineNumber = Infinity;
+
 		for (const childProperty of propertyTree.childrenProperties) {
 			if (
 				childProperty.beginningLineNumber! < minimumBeginningLineNumber
@@ -596,6 +624,7 @@ function updateSortingQueueForArrayProperties(
 		// If the child property of the array is an object, then you can sort the properties within this object
 		if (subObject.type === Container.Object) {
 			let minimumBeginningLineNumber = Infinity;
+
 			for (const childProperty of subObject.childrenProperties) {
 				if (
 					childProperty.beginningLineNumber! <

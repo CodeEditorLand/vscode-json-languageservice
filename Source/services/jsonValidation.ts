@@ -57,7 +57,9 @@ export class JSONValidation {
 			return this.promise.resolve([]);
 		}
 		const diagnostics: Diagnostic[] = [];
+
 		const added: { [signature: string]: boolean } = {};
+
 		const addProblem = (problem: Diagnostic) => {
 			// remove duplicated messages
 			const signature =
@@ -66,21 +68,26 @@ export class JSONValidation {
 				problem.range.start.character +
 				" " +
 				problem.message;
+
 			if (!added[signature]) {
 				added[signature] = true;
 				diagnostics.push(problem);
 			}
 		};
+
 		const getDiagnostics = (schema: ResolvedSchema | undefined) => {
 			let trailingCommaSeverity = documentSettings?.trailingCommas
 				? toDiagnosticSeverity(documentSettings.trailingCommas)
 				: DiagnosticSeverity.Error;
+
 			let commentSeverity = documentSettings?.comments
 				? toDiagnosticSeverity(documentSettings.comments)
 				: this.commentSeverity;
+
 			let schemaValidation = documentSettings?.schemaValidation
 				? toDiagnosticSeverity(documentSettings.schemaValidation)
 				: DiagnosticSeverity.Warning;
+
 			let schemaRequest = documentSettings?.schemaRequest
 				? toDiagnosticSeverity(documentSettings.schemaRequest)
 				: DiagnosticSeverity.Warning;
@@ -92,12 +99,15 @@ export class JSONValidation {
 				) => {
 					if (jsonDocument.root && schemaRequest) {
 						const astRoot = jsonDocument.root;
+
 						const property =
 							astRoot.type === "object"
 								? astRoot.properties[0]
 								: undefined;
+
 						if (property && property.keyNode.value === "$schema") {
 							const node = property.valueNode || property;
+
 							const range = Range.create(
 								textDocument.positionAt(node.offset),
 								textDocument.positionAt(
@@ -128,6 +138,7 @@ export class JSONValidation {
 						}
 					}
 				};
+
 				if (schema.errors.length) {
 					addSchemaProblem(
 						schema.errors[0],
@@ -146,6 +157,7 @@ export class JSONValidation {
 						schemaValidation,
 						documentSettings?.schemaDraft,
 					);
+
 					if (semanticErrors) {
 						semanticErrors.forEach(addProblem);
 					}
@@ -187,10 +199,12 @@ export class JSONValidation {
 
 		if (schema) {
 			const uri = schema.id || "schemaservice://untitled/" + idCounter++;
+
 			const handle = this.jsonSchemaService.registerExternalSchema({
 				uri,
 				schema,
 			});
+
 			return handle.getResolvedSchema().then((resolvedSchema) => {
 				return getDiagnostics(resolvedSchema);
 			});
@@ -225,6 +239,7 @@ function schemaAllowsComments(schemaRef: JSONSchemaRef): boolean | undefined {
 		if (schemaRef.allOf) {
 			for (const schema of schemaRef.allOf) {
 				const allow = schemaAllowsComments(schema);
+
 				if (isBoolean(allow)) {
 					return allow;
 				}
@@ -242,6 +257,7 @@ function schemaAllowsTrailingCommas(
 			return schemaRef.allowTrailingCommas;
 		}
 		const deprSchemaRef = schemaRef as any;
+
 		if (isBoolean(deprSchemaRef["allowsTrailingCommas"])) {
 			// deprecated
 			return deprSchemaRef["allowsTrailingCommas"];
@@ -249,6 +265,7 @@ function schemaAllowsTrailingCommas(
 		if (schemaRef.allOf) {
 			for (const schema of schemaRef.allOf) {
 				const allow = schemaAllowsTrailingCommas(schema);
+
 				if (isBoolean(allow)) {
 					return allow;
 				}
@@ -264,8 +281,10 @@ function toDiagnosticSeverity(
 	switch (severityLevel) {
 		case "error":
 			return DiagnosticSeverity.Error;
+
 		case "warning":
 			return DiagnosticSeverity.Warning;
+
 		case "ignore":
 			return undefined;
 	}

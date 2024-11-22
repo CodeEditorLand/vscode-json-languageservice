@@ -50,6 +50,7 @@ import { sort } from "./utils/sort";
 
 export type JSONDocument = {
 	root: ASTNode | undefined;
+
 	getNodeFromOffset(
 		offset: number,
 		includeRightBound?: boolean,
@@ -59,6 +60,7 @@ export * from "./jsonLanguageTypes";
 
 export interface LanguageService {
 	configure(settings: LanguageSettings): void;
+
 	doValidation(
 		document: TextDocument,
 		jsonDocument: JSONDocument,
@@ -71,16 +73,20 @@ export interface LanguageService {
 		syntaxDiagnostics?: Diagnostic[],
 	): JSONDocument;
 	resetSchema(uri: string): boolean;
+
 	getMatchingSchemas(
 		document: TextDocument,
 		jsonDocument: JSONDocument,
 		schema?: JSONSchema,
 	): PromiseLike<MatchingSchema[]>;
+
 	getLanguageStatus(
 		document: TextDocument,
 		jsonDocument: JSONDocument,
 	): JSONLanguageStatus;
+
 	doResolve(item: CompletionItem): PromiseLike<CompletionItem>;
+
 	doComplete(
 		document: TextDocument,
 		position: Position,
@@ -101,21 +107,25 @@ export interface LanguageService {
 		doc: JSONDocument,
 		context?: DocumentColorsContext,
 	): PromiseLike<ColorInformation[]>;
+
 	getColorPresentations(
 		document: TextDocument,
 		doc: JSONDocument,
 		color: Color,
 		range: Range,
 	): ColorPresentation[];
+
 	doHover(
 		document: TextDocument,
 		position: Position,
 		doc: JSONDocument,
 	): PromiseLike<Hover | null>;
+
 	getFoldingRanges(
 		document: TextDocument,
 		context?: FoldingRangesContext,
 	): FoldingRange[];
+
 	getSelectionRanges(
 		document: TextDocument,
 		positions: Position[],
@@ -130,6 +140,7 @@ export interface LanguageService {
 		document: TextDocument,
 		doc: JSONDocument,
 	): PromiseLike<DocumentLink[]>;
+
 	format(
 		document: TextDocument,
 		range: Range,
@@ -156,17 +167,21 @@ export function getLanguageService(
 		promise,
 		params.clientCapabilities,
 	);
+
 	const jsonHover = new JSONHover(
 		jsonSchemaService,
 		params.contributions,
 		promise,
 	);
+
 	const jsonDocumentSymbols = new JSONDocumentSymbols(jsonSchemaService);
+
 	const jsonValidation = new JSONValidation(jsonSchemaService, promise);
 
 	return {
 		configure: (settings: LanguageSettings) => {
 			jsonSchemaService.clearExternalSchemas();
+
 			settings.schemas?.forEach(
 				jsonSchemaService.registerExternalSchema.bind(
 					jsonSchemaService,

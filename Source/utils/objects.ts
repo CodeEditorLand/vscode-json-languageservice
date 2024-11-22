@@ -43,11 +43,14 @@ export function equals(one: any, other: any): boolean {
 			oneKeys.push(key);
 		}
 		oneKeys.sort();
+
 		const otherKeys: string[] = [];
+
 		for (key in other) {
 			otherKeys.push(key);
 		}
 		otherKeys.sort();
+
 		if (!equals(oneKeys, otherKeys)) {
 			return false;
 		}

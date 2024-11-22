@@ -22,6 +22,7 @@ export function startsWith(haystack: string, needle: string): boolean {
  */
 export function endsWith(haystack: string, needle: string): boolean {
 	const diff = haystack.length - needle.length;
+
 	if (diff > 0) {
 		return haystack.lastIndexOf(needle) === diff;
 	} else if (diff === 0) {
@@ -39,6 +40,7 @@ export function convertSimple2RegExpPattern(pattern: string): string {
 
 export function repeat(value: string, count: number) {
 	let s = "";
+
 	while (count > 0) {
 		if ((count & 1) === 1) {
 			s += value;
@@ -51,6 +53,7 @@ export function repeat(value: string, count: number) {
 
 export function extendedRegExp(pattern: string): RegExp | undefined {
 	let flags = "";
+
 	if (startsWith(pattern, "(?i)")) {
 		pattern = pattern.substring(4);
 		flags = "i";
@@ -71,10 +74,12 @@ export function extendedRegExp(pattern: string): RegExp | undefined {
 // from https://tanishiking.github.io/posts/count-unicode-codepoint/#work-hard-with-for-statements
 export function stringLength(str: string) {
 	let count = 0;
+
 	for (let i = 0; i < str.length; i++) {
 		count++;
 		// obtain the i-th 16-bit
 		const code = str.charCodeAt(i);
+
 		if (0xd800 <= code && code <= 0xdbff) {
 			// if the i-th 16bit is an upper surrogate
 			// skip the next 16 bits (lower surrogate)

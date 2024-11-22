@@ -36,7 +36,9 @@ export class JSONHover {
 		doc: Parser.JSONDocument,
 	): PromiseLike<Hover | null> {
 		const offset = document.offsetAt(position);
+
 		let node = doc.getNodeFromOffset(offset);
+
 		if (
 			!node ||
 			((node.type === "object" || node.type === "array") &&
@@ -50,12 +52,14 @@ export class JSONHover {
 		// use the property description when hovering over an object key
 		if (node.type === "string") {
 			const parent = node.parent;
+
 			if (
 				parent &&
 				parent.type === "property" &&
 				parent.keyNode === node
 			) {
 				node = parent.valueNode;
+
 				if (!node) {
 					return this.promise.resolve(null);
 				}
@@ -72,16 +76,20 @@ export class JSONHover {
 				contents: contents,
 				range: hoverRange,
 			};
+
 			return result;
 		};
 
 		const location = Parser.getNodePath(node);
+
 		for (let i = this.contributions.length - 1; i >= 0; i--) {
 			const contribution = this.contributions[i];
+
 			const promise = contribution.getInfoContribution(
 				document.uri,
 				location,
 			);
+
 			if (promise) {
 				return promise.then((htmlContent) => createHover(htmlContent));
 			}
@@ -97,7 +105,9 @@ export class JSONHover {
 					);
 
 					let title: string | undefined = undefined;
+
 					let markdownDescription: string | undefined = undefined;
+
 					let markdownEnumValueDescription: string | undefined =
 							undefined,
 						enumValue: string | undefined = undefined;
@@ -108,10 +118,12 @@ export class JSONHover {
 								markdownDescription ||
 								s.schema.markdownDescription ||
 								toMarkdown(s.schema.description);
+
 							if (s.schema.enum) {
 								const idx = s.schema.enum.indexOf(
 									Parser.getNodeValue(node),
 								);
+
 								if (s.schema.markdownEnumDescriptions) {
 									markdownEnumValueDescription =
 										s.schema.markdownEnumDescriptions[idx];
@@ -122,6 +134,7 @@ export class JSONHover {
 								}
 								if (markdownEnumValueDescription) {
 									enumValue = s.schema.enum[idx];
+
 									if (typeof enumValue !== "string") {
 										enumValue = JSON.stringify(enumValue);
 									}
@@ -130,7 +143,9 @@ export class JSONHover {
 						}
 						return true;
 					});
+
 					let result = "";
+
 					if (title) {
 						result = toMarkdown(title);
 					}

@@ -80,6 +80,7 @@ export interface ISchemaHandle {
 }
 
 const BANG = "!";
+
 const PATH_SEP = "/";
 
 interface IGlobWrapper {
@@ -96,9 +97,11 @@ class FilePatternAssociation {
 		private readonly uris: string[],
 	) {
 		this.globWrappers = [];
+
 		try {
 			for (let patternString of pattern) {
 				const include = patternString[0] !== BANG;
+
 				if (!include) {
 					patternString = patternString.substring(1);
 				}
@@ -117,6 +120,7 @@ class FilePatternAssociation {
 			}
 			if (folderUri) {
 				folderUri = normalizeResourceForMatching(folderUri);
+
 				if (!folderUri.endsWith("/")) {
 					folderUri = folderUri + "/";
 				}
@@ -133,6 +137,7 @@ class FilePatternAssociation {
 			return false;
 		}
 		let match = false;
+
 		for (const { regexp, include } of this.globWrappers) {
 			if (regexp.test(fileName)) {
 				match = include;
@@ -165,6 +170,7 @@ class SchemaHandle implements ISchemaHandle {
 		this.uri = uri;
 		this.dependencies = new Set();
 		this.anchors = undefined;
+
 		if (unresolvedSchemaContent) {
 			this.unresolvedSchema = this.service.promise.resolve(
 				new UnresolvedSchema(unresolvedSchemaContent),
@@ -196,6 +202,7 @@ class SchemaHandle implements ISchemaHandle {
 		this.unresolvedSchema = undefined;
 		this.dependencies.clear();
 		this.anchors = undefined;
+
 		return hasChanges;
 	}
 }
@@ -230,6 +237,7 @@ export class ResolvedSchema {
 
 	public getSection(path: string[]): JSONSchema | undefined {
 		const schemaRef = this.getSectionRecursive(path, this.schema);
+
 		if (schemaRef) {
 			return Parser.asSchema(schemaRef);
 		}
@@ -250,6 +258,7 @@ export class ResolvedSchema {
 		} else if (schema.patternProperties) {
 			for (const pattern of Object.keys(schema.patternProperties)) {
 				const regex = Strings.extendedRegExp(pattern);
+
 				if (regex?.test(next)) {
 					return this.getSectionRecursive(
 						path,
@@ -262,6 +271,7 @@ export class ResolvedSchema {
 		} else if (next.match("[0-9]+")) {
 			if (Array.isArray(schema.items)) {
 				const index = parseInt(next, 10);
+
 				if (!isNaN(index) && schema.items[index]) {
 					return this.getSectionRecursive(path, schema.items[index]);
 				}
@@ -316,6 +326,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 	): string[] {
 		return Object.keys(this.registeredSchemasIds).filter((id) => {
 			const scheme = URI.parse(id).scheme;
+
 			return scheme !== "schemaservice" && (!filter || filter(scheme));
 		});
 	}
@@ -338,14 +349,17 @@ export class JSONSchemaService implements IJSONSchemaService {
 		uri = normalizeId(uri);
 
 		const toWalk = [uri];
+
 		const all: (SchemaHandle | undefined)[] = Object.keys(
 			this.schemasById,
 		).map((key) => this.schemasById[key]);
 
 		while (toWalk.length) {
 			const curr = toWalk.pop()!;
+
 			for (let i = 0; i < all.length; i++) {
 				const handle = all[i];
+
 				if (
 					handle &&
 					(handle.uri === curr || handle.dependencies.has(curr))
@@ -368,6 +382,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 	): void {
 		if (schemaContributions.schemas) {
 			const schemas = schemaContributions.schemas;
+
 			for (const id in schemas) {
 				const normalizedId = normalizeId(id);
 				this.contributionSchemas[normalizedId] = this.addSchemaHandle(
@@ -378,8 +393,10 @@ export class JSONSchemaService implements IJSONSchemaService {
 		}
 		if (Array.isArray(schemaContributions.schemaAssociations)) {
 			const schemaAssociations = schemaContributions.schemaAssociations;
+
 			for (let schemaAssociation of schemaAssociations) {
 				const uris = schemaAssociation.uris.map(normalizeId);
+
 				const association = this.addFilePatternAssociation(
 					schemaAssociation.pattern,
 					schemaAssociation.folderUri,
@@ -400,6 +417,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 			unresolvedSchemaContent,
 		);
 		this.schemasById[id] = schemaHandle;
+
 		return schemaHandle;
 	}
 
@@ -420,6 +438,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 	): FilePatternAssociation {
 		const fpa = new FilePatternAssociation(pattern, folderUri, uris);
 		this.filePatternAssociations.push(fpa);
+
 		return fpa;
 	}
 
@@ -457,7 +476,9 @@ export class JSONSchemaService implements IJSONSchemaService {
 		schemaId: string,
 	): PromiseLike<ResolvedSchema | undefined> {
 		const id = normalizeId(schemaId);
+
 		const schemaHandle = this.schemasById[id];
+
 		if (schemaHandle) {
 			return schemaHandle.getResolvedSchema();
 		}
@@ -470,6 +491,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 				"Unable to load schema from '{0}'. No schema request service available",
 				toDisplayString(url),
 			);
+
 			return this.promise.resolve(
 				new UnresolvedSchema(<JSONSchema>{}, [errorMessage]),
 			);
@@ -484,9 +506,11 @@ export class JSONSchemaService implements IJSONSchemaService {
 						"Unable to load schema from '{0}': No content.",
 						toDisplayString(url),
 					);
+
 					return new UnresolvedSchema(<JSONSchema>{}, [errorMessage]);
 				}
 				const errors = [];
+
 				if (content.charCodeAt(0) === 65279) {
 					errors.push(
 						l10n.t(
@@ -498,8 +522,10 @@ export class JSONSchemaService implements IJSONSchemaService {
 				}
 
 				let schemaContent: JSONSchema = {};
+
 				const jsonErrors: Json.ParseError[] = [];
 				schemaContent = Json.parse(content, jsonErrors);
+
 				if (jsonErrors.length) {
 					errors.push(
 						l10n.t(
@@ -513,7 +539,9 @@ export class JSONSchemaService implements IJSONSchemaService {
 			},
 			(error: any) => {
 				let errorMessage = error.toString() as string;
+
 				const errorSplit = error.toString().split("Error: ");
+
 				if (errorSplit.length > 1) {
 					// more concise error message, URL and context are attached by caller anyways
 					errorMessage = errorSplit[1];
@@ -540,11 +568,13 @@ export class JSONSchemaService implements IJSONSchemaService {
 		handle: SchemaHandle,
 	): PromiseLike<ResolvedSchema> {
 		const resolveErrors: string[] = schemaToResolve.errors.slice(0);
+
 		const schema = schemaToResolve.schema;
 
 		let schemaDraft = schema.$schema
 			? normalizeId(schema.$schema)
 			: undefined;
+
 		if (schemaDraft === "http://json-schema.org/draft-03/schema") {
 			return this.promise.resolve(
 				new ResolvedSchema(
@@ -565,15 +595,19 @@ export class JSONSchemaService implements IJSONSchemaService {
 			path: string,
 		): any => {
 			path = decodeURIComponent(path);
+
 			let current: any = schema;
+
 			if (path[0] === "/") {
 				path = path.substring(1);
 			}
 			path.split("/").some((part) => {
 				part = part.replace(/~1/g, "/").replace(/~0/g, "~");
 				current = current[part];
+
 				return !current;
 			});
+
 			return current;
 		};
 
@@ -607,6 +641,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 			refSegment: string | undefined,
 		): void => {
 			let section;
+
 			if (refSegment === undefined || refSegment.length === 0) {
 				section = sourceRoot;
 			} else if (refSegment.charAt(0) === "/") {
@@ -634,11 +669,14 @@ export class JSONSchemaService implements IJSONSchemaService {
 				uri = contextService.resolveRelativePath(uri, parentHandle.uri);
 			}
 			uri = normalizeId(uri);
+
 			const referencedHandle = this.getOrAddSchemaHandle(uri);
+
 			return referencedHandle
 				.getUnresolvedSchema()
 				.then((unresolvedSchema) => {
 					parentHandle.dependencies.add(uri);
+
 					if (unresolvedSchema.errors.length) {
 						const loc = refSegment ? uri + "#" + refSegment : uri;
 						resolveErrors.push(
@@ -655,6 +693,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 						referencedHandle,
 						refSegment,
 					);
+
 					return resolveRefs(
 						node,
 						unresolvedSchema.schema,
@@ -672,10 +711,13 @@ export class JSONSchemaService implements IJSONSchemaService {
 
 			this.traverseNodes(node, (next) => {
 				const seenRefs = new Set<string>();
+
 				while (next.$ref) {
 					const ref = next.$ref;
+
 					const segments = ref.split("#", 2);
 					delete next.$ref;
+
 					if (segments[0].length > 0) {
 						// This is a reference to an external schema
 						openPromises.push(
@@ -686,6 +728,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 								parentHandle,
 							),
 						);
+
 						return;
 					} else {
 						// This is a reference inside the current schema
@@ -711,10 +754,12 @@ export class JSONSchemaService implements IJSONSchemaService {
 			const result = new Map<string, JSONSchema>();
 			this.traverseNodes(root, (next) => {
 				const id = next.$id || next.id;
+
 				const anchor =
 					isString(id) && id.charAt(0) === "#"
 						? id.substring(1)
 						: next.$anchor;
+
 				if (anchor) {
 					if (result.has(anchor)) {
 						resolveErrors.push(
@@ -734,10 +779,13 @@ export class JSONSchemaService implements IJSONSchemaService {
 					usesUnsupportedFeatures.add("$dynamicAnchor");
 				}
 			});
+
 			return result;
 		};
+
 		return resolveRefs(schema, schema, handle).then((_) => {
 			let resolveWarnings: string[] = [];
+
 			if (usesUnsupportedFeatures.size) {
 				resolveWarnings.push(
 					l10n.t(
@@ -771,12 +819,15 @@ export class JSONSchemaService implements IJSONSchemaService {
 				}
 			}
 		};
+
 		const collectMapEntries = (...maps: (JSONSchemaMap | undefined)[]) => {
 			for (const map of maps) {
 				if (isObject(map)) {
 					for (const k in map) {
 						const key = k as keyof JSONSchemaMap;
+
 						const entry = map[key];
+
 						if (isObject(entry)) {
 							toWalk.push(entry);
 						}
@@ -784,6 +835,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 				}
 			}
 		};
+
 		const collectArrayEntries = (
 			...arrays: (JSONSchemaRef[] | undefined)[]
 		) => {
@@ -797,6 +849,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 				}
 			}
 		};
+
 		const collectEntryOrArrayEntries = (
 			items: JSONSchemaRef[] | JSONSchemaRef | undefined,
 		) => {
@@ -814,6 +867,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 		const toWalk: JSONSchema[] = [root];
 
 		let next = toWalk.pop();
+
 		while (next) {
 			if (!seen.has(next)) {
 				seen.add(next);
@@ -861,6 +915,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 					p.valueNode?.type === "string"
 				) {
 					let schemaId = p.valueNode.value;
+
 					if (
 						this.contextService &&
 						!/^\w[\w\d+.-]*:/.test(schemaId)
@@ -880,8 +935,11 @@ export class JSONSchemaService implements IJSONSchemaService {
 
 	private getAssociatedSchemas(resource: string): string[] {
 		const seen: { [schemaId: string]: boolean } = Object.create(null);
+
 		const schemas: string[] = [];
+
 		const normalizedResource = normalizeResourceForMatching(resource);
+
 		for (const entry of this.filePatternAssociations) {
 			if (entry.matchesPattern(normalizedResource)) {
 				for (const schemaId of entry.getURIs()) {
@@ -901,6 +959,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 	): string[] {
 		let schemeId =
 			document && this.getSchemaFromProperty(resource, document);
+
 		if (schemeId) {
 			return [schemeId];
 		}
@@ -914,8 +973,10 @@ export class JSONSchemaService implements IJSONSchemaService {
 		if (document) {
 			// first use $schema if present
 			let schemeId = this.getSchemaFromProperty(resource, document);
+
 			if (schemeId) {
 				const id = normalizeId(schemeId);
+
 				return this.getOrAddSchemaHandle(id).getResolvedSchema();
 			}
 		}
@@ -926,6 +987,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 			return this.cachedSchemaForResource.resolvedSchema;
 		}
 		const schemas = this.getAssociatedSchemas(resource);
+
 		const resolvedSchema =
 			schemas.length > 0
 				? this.createCombinedSchema(
@@ -934,6 +996,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 					).getResolvedSchema()
 				: this.promise.resolve(undefined);
 		this.cachedSchemaForResource = { resource, resolvedSchema };
+
 		return resolvedSchema;
 	}
 
@@ -947,9 +1010,11 @@ export class JSONSchemaService implements IJSONSchemaService {
 			const combinedSchemaId =
 				"schemaservice://combinedSchema/" +
 				encodeURIComponent(resource);
+
 			const combinedSchema: JSONSchema = {
 				allOf: schemaIds.map((schemaId) => ({ $ref: schemaId })),
 			};
+
 			return this.addSchemaHandle(combinedSchemaId, combinedSchema);
 		}
 	}
@@ -963,7 +1028,9 @@ export class JSONSchemaService implements IJSONSchemaService {
 			const id =
 				schema.id ||
 				"schemaservice://untitled/matchingSchemas/" + idCounter++;
+
 			const handle = this.addSchemaHandle(id, schema);
+
 			return handle.getResolvedSchema().then((resolvedSchema) => {
 				return jsonDocument
 					.getMatchingSchemas(resolvedSchema.schema)
@@ -1008,6 +1075,7 @@ function normalizeResourceForMatching(resource: string): string {
 function toDisplayString(url: string) {
 	try {
 		const uri = URI.parse(url);
+
 		if (uri.scheme === "file") {
 			return uri.fsPath;
 		}

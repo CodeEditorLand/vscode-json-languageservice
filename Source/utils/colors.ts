@@ -6,9 +6,13 @@
 import { Color } from "../jsonLanguageTypes";
 
 const Digit0 = 48;
+
 const Digit9 = 57;
+
 const A = 65;
+
 const a = 97;
+
 const f = 102;
 
 export function hexDigit(charCode: number) {
@@ -39,6 +43,7 @@ export function colorFromHex(text: string): Color | undefined {
 				blue: (hexDigit(text.charCodeAt(3)) * 0x11) / 255.0,
 				alpha: 1,
 			};
+
 		case 5:
 			return {
 				red: (hexDigit(text.charCodeAt(1)) * 0x11) / 255.0,
@@ -46,6 +51,7 @@ export function colorFromHex(text: string): Color | undefined {
 				blue: (hexDigit(text.charCodeAt(3)) * 0x11) / 255.0,
 				alpha: (hexDigit(text.charCodeAt(4)) * 0x11) / 255.0,
 			};
+
 		case 7:
 			return {
 				red:
@@ -62,6 +68,7 @@ export function colorFromHex(text: string): Color | undefined {
 					255.0,
 				alpha: 1,
 			};
+
 		case 9:
 			return {
 				red:

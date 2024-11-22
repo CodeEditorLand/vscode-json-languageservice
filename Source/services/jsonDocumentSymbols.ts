@@ -34,6 +34,7 @@ export class JSONDocumentSymbols {
 		context: DocumentSymbolsContext = { resultLimit: Number.MAX_VALUE },
 	): SymbolInformation[] {
 		const root = doc.root;
+
 		if (!root) {
 			return [];
 		}
@@ -42,6 +43,7 @@ export class JSONDocumentSymbols {
 
 		// special handling for key bindings
 		const resourceString = document.uri;
+
 		if (
 			resourceString === "vscode://defaultsettings/keybindings.json" ||
 			Strings.endsWith(
@@ -51,6 +53,7 @@ export class JSONDocumentSymbols {
 		) {
 			if (root.type === "array") {
 				const result: SymbolInformation[] = [];
+
 				for (const item of root.items) {
 					if (item.type === "object") {
 						for (const property of item.properties) {
@@ -68,6 +71,7 @@ export class JSONDocumentSymbols {
 									location: location,
 								});
 								limit--;
+
 								if (limit <= 0) {
 									if (
 										context &&
@@ -90,7 +94,9 @@ export class JSONDocumentSymbols {
 		const toVisit: { node: ASTNode; containerName: string }[] = [
 			{ node: root, containerName: "" },
 		];
+
 		let nextToVisit = 0;
+
 		let limitExceeded = false;
 
 		const result: SymbolInformation[] = [];
@@ -108,13 +114,16 @@ export class JSONDocumentSymbols {
 			} else if (node.type === "object") {
 				node.properties.forEach((property: PropertyASTNode) => {
 					const valueNode = property.valueNode;
+
 					if (valueNode) {
 						if (limit > 0) {
 							limit--;
+
 							const location = Location.create(
 								document.uri,
 								getRange(document, property),
 							);
+
 							const childContainerName = containerName
 								? containerName + "." + property.keyNode.value
 								: property.keyNode.value;
@@ -154,6 +163,7 @@ export class JSONDocumentSymbols {
 		context: DocumentSymbolsContext = { resultLimit: Number.MAX_VALUE },
 	): DocumentSymbol[] {
 		const root = doc.root;
+
 		if (!root) {
 			return [];
 		}
@@ -162,6 +172,7 @@ export class JSONDocumentSymbols {
 
 		// special handling for key bindings
 		const resourceString = document.uri;
+
 		if (
 			resourceString === "vscode://defaultsettings/keybindings.json" ||
 			Strings.endsWith(
@@ -171,6 +182,7 @@ export class JSONDocumentSymbols {
 		) {
 			if (root.type === "array") {
 				const result: DocumentSymbol[] = [];
+
 				for (const item of root.items) {
 					if (item.type === "object") {
 						for (const property of item.properties) {
@@ -179,6 +191,7 @@ export class JSONDocumentSymbols {
 								property.valueNode
 							) {
 								const range = getRange(document, item);
+
 								const selectionRange = getRange(
 									document,
 									property.keyNode,
@@ -190,6 +203,7 @@ export class JSONDocumentSymbols {
 									selectionRange,
 								});
 								limit--;
+
 								if (limit <= 0) {
 									if (
 										context &&
@@ -210,10 +224,13 @@ export class JSONDocumentSymbols {
 		}
 
 		const result: DocumentSymbol[] = [];
+
 		const toVisit: { node: ASTNode; result: DocumentSymbol[] }[] = [
 			{ node: root, result },
 		];
+
 		let nextToVisit = 0;
+
 		let limitExceeded = false;
 
 		const collectOutlineEntries = (
@@ -225,9 +242,13 @@ export class JSONDocumentSymbols {
 					if (node) {
 						if (limit > 0) {
 							limit--;
+
 							const range = getRange(document, node);
+
 							const selectionRange = range;
+
 							const name = String(index);
+
 							const symbol = {
 								name,
 								kind: this.getSymbolKind(node.type),
@@ -245,15 +266,20 @@ export class JSONDocumentSymbols {
 			} else if (node.type === "object") {
 				node.properties.forEach((property: PropertyASTNode) => {
 					const valueNode = property.valueNode;
+
 					if (valueNode) {
 						if (limit > 0) {
 							limit--;
+
 							const range = getRange(document, property);
+
 							const selectionRange = getRange(
 								document,
 								property.keyNode,
 							);
+
 							const children: DocumentSymbol[] = [];
+
 							const symbol: DocumentSymbol = {
 								name: this.getKeyLabel(property),
 								kind: this.getSymbolKind(valueNode.type),
@@ -288,14 +314,19 @@ export class JSONDocumentSymbols {
 		switch (nodeType) {
 			case "object":
 				return SymbolKind.Module;
+
 			case "string":
 				return SymbolKind.String;
+
 			case "number":
 				return SymbolKind.Number;
+
 			case "array":
 				return SymbolKind.Array;
+
 			case "boolean":
 				return SymbolKind.Boolean;
+
 			default: // 'null'
 				return SymbolKind.Variable;
 		}
@@ -303,6 +334,7 @@ export class JSONDocumentSymbols {
 
 	private getKeyLabel(property: PropertyASTNode) {
 		let name = property.keyNode.value;
+
 		if (name) {
 			name = name.replace(/[\n]/g, "↵");
 		}
@@ -342,15 +374,19 @@ export class JSONDocumentSymbols {
 			.getSchemaForResource(document.uri, doc)
 			.then((schema) => {
 				const result: ColorInformation[] = [];
+
 				if (schema) {
 					let limit =
 						context && typeof context.resultLimit === "number"
 							? context.resultLimit
 							: Number.MAX_VALUE;
+
 					const matchingSchemas = doc.getMatchingSchemas(
 						schema.schema,
 					);
+
 					const visitedNode: { [nodeId: string]: boolean } = {};
+
 					for (const s of matchingSchemas) {
 						if (
 							!s.inverted &&
@@ -361,16 +397,19 @@ export class JSONDocumentSymbols {
 							s.node.type === "string"
 						) {
 							const nodeId = String(s.node.offset);
+
 							if (!visitedNode[nodeId]) {
 								const color = colorFromHex(
 									Parser.getNodeValue(s.node),
 								);
+
 								if (color) {
 									const range = getRange(document, s.node);
 									result.push({ color, range });
 								}
 								visitedNode[nodeId] = true;
 								limit--;
+
 								if (limit <= 0) {
 									if (
 										context &&
@@ -397,16 +436,19 @@ export class JSONDocumentSymbols {
 		range: Range,
 	): ColorPresentation[] {
 		const result: ColorPresentation[] = [];
+
 		const red256 = Math.round(color.red * 255),
 			green256 = Math.round(color.green * 255),
 			blue256 = Math.round(color.blue * 255);
 
 		function toTwoDigitHex(n: number): string {
 			const r = n.toString(16);
+
 			return r.length !== 2 ? "0" + r : r;
 		}
 
 		let label;
+
 		if (color.alpha === 1) {
 			label = `#${toTwoDigitHex(red256)}${toTwoDigitHex(green256)}${toTwoDigitHex(blue256)}`;
 		} else {

@@ -37,6 +37,7 @@ import { endsWith, extendedRegExp } from "../utils/strings";
 import * as SchemaService from "./jsonSchemaService";
 
 const valueCommitCharacters = [",", "}", "]"];
+
 const propertyCommitCharacters = [":"];
 
 export class JSONCompletion {
@@ -54,8 +55,10 @@ export class JSONCompletion {
 	public doResolve(item: CompletionItem): PromiseLike<CompletionItem> {
 		for (let i = this.contributions.length - 1; i >= 0; i--) {
 			const resolveCompletion = this.contributions[i].resolveCompletion;
+
 			if (resolveCompletion) {
 				const resolver = resolveCompletion(item);
+
 				if (resolver) {
 					return resolver;
 				}
@@ -77,12 +80,15 @@ export class JSONCompletion {
 		const text = document.getText();
 
 		const offset = document.offsetAt(position);
+
 		let node = doc.getNodeFromOffset(offset, true);
+
 		if (this.isInComment(document, node ? node.offset : 0, offset)) {
 			return Promise.resolve(result);
 		}
 		if (node && offset === node.offset + node.length && offset > 0) {
 			const ch = text[offset - 1];
+
 			if (
 				(node.type === "object" && ch === "}") ||
 				(node.type === "array" && ch === "]")
@@ -93,6 +99,7 @@ export class JSONCompletion {
 		}
 
 		const currentWord = this.getCurrentWord(document, offset);
+
 		let overwriteRange: Range;
 
 		if (
@@ -108,6 +115,7 @@ export class JSONCompletion {
 			);
 		} else {
 			let overwriteStart = offset - currentWord.length;
+
 			if (overwriteStart > 0 && text[overwriteStart - 1] === '"') {
 				overwriteStart--;
 			}
@@ -120,15 +128,20 @@ export class JSONCompletion {
 		const supportsCommitCharacters = false; //this.doesSupportsCommitCharacters(); disabled for now, waiting for new API: https://github.com/microsoft/vscode/issues/42544
 
 		const proposed = new Map<string, CompletionItem>();
+
 		const collector: CompletionsCollector = {
 			add: (suggestion: JSONCompletionItem) => {
 				let label = suggestion.label;
+
 				const existing = proposed.get(label);
+
 				if (!existing) {
 					label = label.replace(/[\n]/g, "↵");
+
 					if (label.length > 60) {
 						const shortendedLabel =
 							label.substr(0, 57).trim() + "...";
+
 						if (!proposed.has(shortendedLabel)) {
 							label = shortendedLabel;
 						}
@@ -137,6 +150,7 @@ export class JSONCompletion {
 						overwriteRange,
 						suggestion.insertText,
 					);
+
 					if (supportsCommitCharacters) {
 						suggestion.commitCharacters =
 							suggestion.kind === CompletionItemKind.Property
@@ -175,12 +189,15 @@ export class JSONCompletion {
 				const collectionPromises: PromiseLike<any>[] = [];
 
 				let addValue = true;
+
 				let currentKey = "";
 
 				let currentProperty: PropertyASTNode | undefined = undefined;
+
 				if (node) {
 					if (node.type === "string") {
 						const parent = node.parent;
+
 						if (
 							parent &&
 							parent.type === "property" &&
@@ -192,6 +209,7 @@ export class JSONCompletion {
 								node.offset + 1,
 								node.length - 2,
 							);
+
 							if (parent) {
 								node = parent.parent;
 							}
@@ -215,7 +233,9 @@ export class JSONCompletion {
 							);
 						}
 					});
+
 					let separatorAfter = "";
+
 					if (addValue) {
 						separatorAfter = this.evaluateSeparatorAfter(
 							document,
@@ -254,10 +274,12 @@ export class JSONCompletion {
 								separatorAfter === "",
 								collector,
 							);
+
 						if (collectPromise) {
 							collectionPromises.push(collectPromise);
 						}
 					});
+
 					if (
 						!schema &&
 						currentWord.length > 0 &&
@@ -281,6 +303,7 @@ export class JSONCompletion {
 
 				// proposals for values
 				const types: { [type: string]: boolean } = {};
+
 				if (schema) {
 					// value proposals with schema
 					this.getValueCompletions(
@@ -318,6 +341,7 @@ export class JSONCompletion {
 					.then(() => {
 						if (collector.getNumberOfProposals() === 0) {
 							let offsetForSeparator = offset;
+
 							if (
 								node &&
 								(node.type === "string" ||
@@ -357,9 +381,11 @@ export class JSONCompletion {
 		matchingSchemas.forEach((s) => {
 			if (s.node === node && !s.inverted) {
 				const schemaProperties = s.schema.properties;
+
 				if (schemaProperties) {
 					Object.keys(schemaProperties).forEach((key: string) => {
 						const propertySchema = schemaProperties[key];
+
 						if (
 							typeof propertySchema === "object" &&
 							!propertySchema.deprecationMessage &&
@@ -383,6 +409,7 @@ export class JSONCompletion {
 									propertySchema.description ||
 									"",
 							};
+
 							if (propertySchema.suggestSortText !== undefined) {
 								proposal.sortText =
 									propertySchema.suggestSortText;
@@ -404,6 +431,7 @@ export class JSONCompletion {
 					});
 				}
 				const schemaPropertyNames = s.schema.propertyNames;
+
 				if (
 					typeof schemaPropertyNames === "object" &&
 					!schemaPropertyNames.deprecationMessage &&
@@ -435,6 +463,7 @@ export class JSONCompletion {
 								schemaPropertyNames.description ||
 								"",
 						};
+
 						if (schemaPropertyNames.suggestSortText !== undefined) {
 							proposal.sortText =
 								schemaPropertyNames.suggestSortText;
@@ -450,6 +479,7 @@ export class JSONCompletion {
 						}
 						collector.add(proposal);
 					};
+
 					if (schemaPropertyNames.enum) {
 						for (
 							let i = 0;
@@ -457,6 +487,7 @@ export class JSONCompletion {
 							i++
 						) {
 							let enumDescription = undefined;
+
 							if (
 								schemaPropertyNames.markdownEnumDescriptions &&
 								i <
@@ -507,10 +538,12 @@ export class JSONCompletion {
 				});
 			});
 		};
+
 		if (node.parent) {
 			if (node.parent.type === "property") {
 				// if the object is a property value, check the tree for other objects that hang under a property of the same name
 				const parentKey = node.parent.keyNode.value;
+
 				doc.visit((n) => {
 					if (
 						n.type === "property" &&
@@ -556,6 +589,7 @@ export class JSONCompletion {
 		collector: CompletionsCollector,
 	): void {
 		let offsetForSeparator = offset;
+
 		if (
 			node &&
 			(node.type === "string" ||
@@ -582,12 +616,14 @@ export class JSONCompletion {
 				insertTextFormat: InsertTextFormat.Snippet,
 				documentation: "",
 			});
+
 			return;
 		}
 		const separatorAfter = this.evaluateSeparatorAfter(
 			document,
 			offsetForSeparator,
 		);
+
 		const collectSuggestionsForValues = (value: ASTNode) => {
 			if (value.parent && !Parser.contains(value.parent, offset, true)) {
 				collector.add({
@@ -614,6 +650,7 @@ export class JSONCompletion {
 		if (node.type === "property") {
 			if (offset > (node.colonOffset || 0)) {
 				const valueNode = node.valueNode;
+
 				if (
 					valueNode &&
 					(offset > valueNode.offset + valueNode.length ||
@@ -624,6 +661,7 @@ export class JSONCompletion {
 				}
 				// suggest values at the same key
 				const parentKey = node.keyNode.value;
+
 				doc.visit((n) => {
 					if (
 						n.type === "property" &&
@@ -634,6 +672,7 @@ export class JSONCompletion {
 					}
 					return true;
 				});
+
 				if (
 					parentKey === "$schema" &&
 					node.parent &&
@@ -647,6 +686,7 @@ export class JSONCompletion {
 			if (node.parent && node.parent.type === "property") {
 				// suggest items of an array at the same key
 				const parentKey = node.parent.keyNode.value;
+
 				doc.visit((n) => {
 					if (
 						n.type === "property" &&
@@ -675,7 +715,9 @@ export class JSONCompletion {
 		types: { [type: string]: boolean },
 	): void {
 		let offsetForSeparator = offset;
+
 		let parentKey: string | undefined = undefined;
+
 		let valueNode: ASTNode | undefined = undefined;
 
 		if (
@@ -692,11 +734,13 @@ export class JSONCompletion {
 
 		if (!node) {
 			this.addSchemaValueCompletions(schema.schema, "", collector, types);
+
 			return;
 		}
 
 		if (node.type === "property" && offset > (node.colonOffset || 0)) {
 			const valueNode = node.valueNode;
+
 			if (valueNode && offset > valueNode.offset + valueNode.length) {
 				return; // we are past the value node
 			}
@@ -715,10 +759,12 @@ export class JSONCompletion {
 				node.offset,
 				valueNode,
 			);
+
 			for (const s of matchingSchemas) {
 				if (s.node === node && !s.inverted && s.schema) {
 					if (node.type === "array" && s.schema.items) {
 						let c = collector;
+
 						if (s.schema.uniqueItems) {
 							const existingValues = new Set<any>();
 							node.children.forEach((n) => {
@@ -745,6 +791,7 @@ export class JSONCompletion {
 								document,
 								offset,
 							);
+
 							if (index < s.schema.items.length) {
 								this.addSchemaValueCompletions(
 									s.schema.items[index],
@@ -764,9 +811,11 @@ export class JSONCompletion {
 					}
 					if (parentKey !== undefined) {
 						let propertyMatched = false;
+
 						if (s.schema.properties) {
 							const propertySchema =
 								s.schema.properties[parentKey];
+
 							if (propertySchema) {
 								propertyMatched = true;
 								this.addSchemaValueCompletions(
@@ -782,8 +831,10 @@ export class JSONCompletion {
 								s.schema.patternProperties,
 							)) {
 								const regex = extendedRegExp(pattern);
+
 								if (regex?.test(parentKey)) {
 									propertyMatched = true;
+
 									const propertySchema =
 										s.schema.patternProperties[pattern];
 									this.addSchemaValueCompletions(
@@ -839,6 +890,7 @@ export class JSONCompletion {
 					document.uri,
 					collector,
 				);
+
 				if (collectPromise) {
 					collectionPromises.push(collectPromise);
 				}
@@ -860,6 +912,7 @@ export class JSONCompletion {
 				const parentKey = node.keyNode.value;
 
 				const valueNode = node.valueNode;
+
 				if (
 					(!valueNode ||
 						offset <= valueNode.offset + valueNode.length) &&
@@ -874,6 +927,7 @@ export class JSONCompletion {
 								parentKey,
 								collector,
 							);
+
 						if (collectPromise) {
 							collectionPromises.push(collectPromise);
 						}
@@ -893,6 +947,7 @@ export class JSONCompletion {
 			this.addEnumValueCompletions(schema, separatorAfter, collector);
 			this.addDefaultValueCompletions(schema, separatorAfter, collector);
 			this.collectTypes(schema, types);
+
 			if (Array.isArray(schema.allOf)) {
 				schema.allOf.forEach((s) =>
 					this.addSchemaValueCompletions(
@@ -933,9 +988,12 @@ export class JSONCompletion {
 		arrayDepth = 0,
 	): void {
 		let hasProposals = false;
+
 		if (isDefined(schema.default)) {
 			let type = schema.type;
+
 			let value = schema.default;
+
 			for (let i = arrayDepth; i > 0; i--) {
 				value = [value];
 				type = "array";
@@ -946,6 +1004,7 @@ export class JSONCompletion {
 				insertText: this.getInsertTextForValue(value, separatorAfter),
 				insertTextFormat: InsertTextFormat.Snippet,
 			};
+
 			if (this.doesSupportsLabelDetails()) {
 				completionItem.labelDetails = {
 					description: l10n.t("Default value"),
@@ -959,7 +1018,9 @@ export class JSONCompletion {
 		if (Array.isArray(schema.examples)) {
 			schema.examples.forEach((example) => {
 				let type = schema.type;
+
 				let value = example;
+
 				for (let i = arrayDepth; i > 0; i--) {
 					value = [value];
 					type = "array";
@@ -979,12 +1040,18 @@ export class JSONCompletion {
 		if (Array.isArray(schema.defaultSnippets)) {
 			schema.defaultSnippets.forEach((s) => {
 				let type = schema.type;
+
 				let value = s.body;
+
 				let label = s.label;
+
 				let insertText: string;
+
 				let filterText: string;
+
 				if (isDefined(value)) {
 					let type = schema.type;
+
 					for (let i = arrayDepth; i > 0; i--) {
 						value = [value];
 						type = "array";
@@ -999,6 +1066,7 @@ export class JSONCompletion {
 					let prefix = "",
 						suffix = "",
 						indent = "";
+
 					for (let i = arrayDepth; i > 0; i--) {
 						prefix = prefix + indent + "[\n";
 						suffix = suffix + "\n" + indent + "]";
@@ -1066,9 +1134,11 @@ export class JSONCompletion {
 		if (Array.isArray(schema.enum)) {
 			for (let i = 0, length = schema.enum.length; i < length; i++) {
 				const enm = schema.enum[i];
+
 				let documentation: string | MarkupContent | undefined =
 					this.fromMarkup(schema.markdownDescription) ||
 					schema.description;
+
 				if (
 					schema.markdownEnumDescriptions &&
 					i < schema.markdownEnumDescriptions.length &&
@@ -1102,6 +1172,7 @@ export class JSONCompletion {
 			return;
 		}
 		const type = schema.type;
+
 		if (Array.isArray(type)) {
 			type.forEach((t) => (types[t] = true));
 		} else if (type) {
@@ -1212,6 +1283,7 @@ export class JSONCompletion {
 
 	private getLabelForSnippetValue(value: any): string {
 		const label = JSON.stringify(value);
+
 		return label.replace(/\$\{\d+:([^}]+)\}|\$\d+/g, "$1");
 	}
 
@@ -1221,6 +1293,7 @@ export class JSONCompletion {
 
 	private getInsertTextForValue(value: any, separatorAfter: string): string {
 		const text = JSON.stringify(value, null, "\t");
+
 		if (text === "{}") {
 			return "{$1}" + separatorAfter;
 		} else if (text === "[]") {
@@ -1241,6 +1314,7 @@ export class JSONCompletion {
 			}
 			return JSON.stringify(value);
 		};
+
 		return stringifyObject(value, "", replacer) + separatorAfter;
 	}
 
@@ -1254,11 +1328,13 @@ export class JSONCompletion {
 					return "${1:null}" + separatorAfter;
 				}
 				return this.getInsertTextForValue(value, separatorAfter);
+
 			case "string":
 				let snippetValue = JSON.stringify(value);
 				snippetValue = snippetValue.substr(1, snippetValue.length - 2); // remove quotes
 				snippetValue = this.getInsertTextForPlainText(snippetValue); // escape \ and }
 				return '"${1:' + snippetValue + '}"' + separatorAfter;
+
 			case "number":
 			case "boolean":
 				return "${1:" + JSON.stringify(value) + "}" + separatorAfter;
@@ -1277,10 +1353,13 @@ export class JSONCompletion {
 		switch (type) {
 			case "string":
 				return CompletionItemKind.Value;
+
 			case "object":
 				return CompletionItemKind.Module;
+
 			case "property":
 				return CompletionItemKind.Property;
+
 			default:
 				return CompletionItemKind.Value;
 		}
@@ -1293,12 +1372,15 @@ export class JSONCompletion {
 		switch (node.type) {
 			case "array":
 				return "[]";
+
 			case "object":
 				return "{}";
+
 			default:
 				const content = document
 					.getText()
 					.substr(node.offset, node.length);
+
 				return content;
 		}
 	}
@@ -1311,12 +1393,15 @@ export class JSONCompletion {
 		switch (node.type) {
 			case "array":
 				return this.getInsertTextForValue([], separatorAfter);
+
 			case "object":
 				return this.getInsertTextForValue({}, separatorAfter);
+
 			default:
 				const content =
 					document.getText().substr(node.offset, node.length) +
 					separatorAfter;
+
 				return this.getInsertTextForPlainText(content);
 		}
 	}
@@ -1328,17 +1413,21 @@ export class JSONCompletion {
 		separatorAfter: string,
 	): string {
 		const propertyText = this.getInsertTextForValue(key, "");
+
 		if (!addValue) {
 			return propertyText;
 		}
 		const resultText = propertyText + ": ";
 
 		let value;
+
 		let nValueProposals = 0;
+
 		if (propertySchema) {
 			if (Array.isArray(propertySchema.defaultSnippets)) {
 				if (propertySchema.defaultSnippets.length === 1) {
 					const body = propertySchema.defaultSnippets[0].body;
+
 					if (isDefined(body)) {
 						value = this.getInsertTextForSnippetValue(body, "");
 					}
@@ -1388,6 +1477,7 @@ export class JSONCompletion {
 				let type = Array.isArray(propertySchema.type)
 					? propertySchema.type[0]
 					: propertySchema.type;
+
 				if (!type) {
 					if (propertySchema.properties) {
 						type = "object";
@@ -1398,23 +1488,35 @@ export class JSONCompletion {
 				switch (type) {
 					case "boolean":
 						value = "$1";
+
 						break;
+
 					case "string":
 						value = '"$1"';
+
 						break;
+
 					case "object":
 						value = "{$1}";
+
 						break;
+
 					case "array":
 						value = "[$1]";
+
 						break;
+
 					case "number":
 					case "integer":
 						value = "${1:0}";
+
 						break;
+
 					case "null":
 						value = "${1:null}";
+
 						break;
+
 					default:
 						return propertyText;
 				}
@@ -1428,7 +1530,9 @@ export class JSONCompletion {
 
 	private getCurrentWord(document: TextDocument, offset: number) {
 		let i = offset - 1;
+
 		const text = document.getText();
+
 		while (i >= 0 && ' \t\n\r\v":{[,]}'.indexOf(text.charAt(i)) === -1) {
 			i--;
 		}
@@ -1438,13 +1542,16 @@ export class JSONCompletion {
 	private evaluateSeparatorAfter(document: TextDocument, offset: number) {
 		const scanner = Json.createScanner(document.getText(), true);
 		scanner.setPosition(offset);
+
 		const token = scanner.scan();
+
 		switch (token) {
 			case Json.SyntaxKind.CommaToken:
 			case Json.SyntaxKind.CloseBraceToken:
 			case Json.SyntaxKind.CloseBracketToken:
 			case Json.SyntaxKind.EOF:
 				return "";
+
 			default:
 				return ",";
 		}
@@ -1456,12 +1563,17 @@ export class JSONCompletion {
 		offset: number,
 	) {
 		const scanner = Json.createScanner(document.getText(), true);
+
 		const children = node.items;
+
 		for (let i = children.length - 1; i >= 0; i--) {
 			const child = children[i];
+
 			if (offset > child.offset + child.length) {
 				scanner.setPosition(child.offset + child.length);
+
 				const token = scanner.scan();
+
 				if (
 					token === Json.SyntaxKind.CommaToken &&
 					offset >=
@@ -1480,7 +1592,9 @@ export class JSONCompletion {
 	private isInComment(document: TextDocument, start: number, offset: number) {
 		const scanner = Json.createScanner(document.getText(), false);
 		scanner.setPosition(start);
+
 		let token = scanner.scan();
+
 		while (
 			token !== Json.SyntaxKind.EOF &&
 			scanner.getTokenOffset() + scanner.getTokenLength() < offset

@@ -40,6 +40,7 @@ export function createRegex(
 	const flags = opts && typeof opts.flags === "string" ? opts.flags : "";
 
 	let c;
+
 	for (let i = 0, len = str.length; i < len; i++) {
 		c = str[i];
 
@@ -55,11 +56,13 @@ export function createRegex(
 			case "!":
 			case "|":
 				reStr += "\\" + c;
+
 				break;
 
 			case "?":
 				if (extended) {
 					reStr += ".";
+
 					break;
 				}
 
@@ -67,6 +70,7 @@ export function createRegex(
 			case "]":
 				if (extended) {
 					reStr += c;
+
 					break;
 				}
 
@@ -74,6 +78,7 @@ export function createRegex(
 				if (extended) {
 					inGroup = true;
 					reStr += "(";
+
 					break;
 				}
 
@@ -81,22 +86,27 @@ export function createRegex(
 				if (extended) {
 					inGroup = false;
 					reStr += ")";
+
 					break;
 				}
 
 			case ",":
 				if (inGroup) {
 					reStr += "|";
+
 					break;
 				}
 				reStr += "\\" + c;
+
 				break;
 
 			case "*":
 				// Move over all consecutive "*"'s.
 				// Also store the previous and next characters
 				const prevChar = str[i - 1];
+
 				let starCount = 1;
+
 				while (str[i + 1] === "*") {
 					starCount++;
 					i++;

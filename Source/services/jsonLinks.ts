@@ -18,6 +18,7 @@ export function findLinks(
 	doc: JSONDocument,
 ): PromiseLike<DocumentLink[]> {
 	const links: DocumentLink[] = [];
+
 	doc.visit((node) => {
 		if (
 			node.type === "property" &&
@@ -25,7 +26,9 @@ export function findLinks(
 			node.valueNode?.type === "string"
 		) {
 			const path = node.valueNode.value;
+
 			const targetNode = findTargetNode(doc, path);
+
 			if (targetNode) {
 				const targetPos = document.positionAt(targetNode.offset);
 				links.push({
@@ -36,6 +39,7 @@ export function findLinks(
 		}
 		return true;
 	});
+
 	return Promise.resolve(links);
 }
 
@@ -48,6 +52,7 @@ function createRange(document: TextDocument, node: ASTNode): Range {
 
 function findTargetNode(doc: JSONDocument, path: string): ASTNode | null {
 	const tokens = parseJSONPointer(path);
+
 	if (!tokens) {
 		return null;
 	}
@@ -66,10 +71,12 @@ function findNode(
 	}
 
 	const token: string = pointer.shift() as string;
+
 	if (node && node.type === "object") {
 		const propertyNode: PropertyASTNode | undefined = node.properties.find(
 			(propertyNode) => propertyNode.keyNode.value === token,
 		);
+
 		if (!propertyNode) {
 			return null;
 		}
@@ -77,7 +84,9 @@ function findNode(
 	} else if (node && node.type === "array") {
 		if (token.match(/^(0|[1-9][0-9]*)$/)) {
 			const index = Number.parseInt(token);
+
 			const arrayItem = node.items[index];
+
 			if (!arrayItem) {
 				return null;
 			}

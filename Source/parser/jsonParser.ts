@@ -134,6 +134,7 @@ export abstract class ASTNodeImpl {
 export class NullASTNodeImpl extends ASTNodeImpl implements NullASTNode {
 	public type: "null" = "null";
 	public value: null = null;
+
 	constructor(parent: ASTNode | undefined, offset: number) {
 		super(parent, offset);
 	}
@@ -283,6 +284,7 @@ class EvaluationContext implements IEvaluationContext {
 
 class SchemaCollector implements ISchemaCollector {
 	schemas: IApplicableSchema[] = [];
+
 	constructor(
 		private focusOffset = -1,
 		private exclude?: ASTNode,
@@ -362,6 +364,7 @@ export class ValidationResult {
 			this.enumValues = this.enumValues.concat(
 				validationResult.enumValues,
 			);
+
 			for (const error of this.problems) {
 				if (error.code === ErrorCode.EnumValueMismatch) {
 					error.message = l10n.t(
@@ -380,6 +383,7 @@ export class ValidationResult {
 	): void {
 		this.problems = this.problems.concat(propertyValidationResult.problems);
 		this.propertiesMatches++;
+
 		if (
 			propertyValidationResult.enumValueMatch ||
 			(!propertyValidationResult.hasProblems() &&
@@ -404,6 +408,7 @@ export class ValidationResult {
 
 	public compare(other: ValidationResult): number {
 		const hasProblems = this.hasProblems();
+
 		if (hasProblems !== other.hasProblems()) {
 			return hasProblems ? -1 : 1;
 		}
@@ -466,7 +471,9 @@ export class JSONDocument {
 		if (this.root) {
 			const doVisit = (node: ASTNode): boolean => {
 				let ctn = visitor(node);
+
 				const children = node.children;
+
 				if (Array.isArray(children)) {
 					for (let i = 0; i < children.length && ctn; i++) {
 						ctn = doVisit(children[i]);
@@ -474,6 +481,7 @@ export class JSONDocument {
 				}
 				return ctn;
 			};
+
 			doVisit(this.root);
 		}
 	}
@@ -493,6 +501,7 @@ export class JSONDocument {
 				NoOpSchemaCollector.instance,
 				new EvaluationContext(schemaDraft ?? getSchemaDraft(schema)),
 			);
+
 			return validationResult.problems.map((p) => {
 				const range = Range.create(
 					textDocument.positionAt(p.location.offset),
@@ -500,6 +509,7 @@ export class JSONDocument {
 						p.location.offset + p.location.length,
 					),
 				);
+
 				return Diagnostic.create(
 					range,
 					p.message,
@@ -518,7 +528,9 @@ export class JSONDocument {
 	): IApplicableSchema[] {
 		if (this.root && schema) {
 			const matchingSchemas = new SchemaCollector(focusOffset, exclude);
+
 			const schemaDraft = getSchemaDraft(schema);
+
 			const context = new EvaluationContext(schemaDraft);
 			validate(
 				this.root,
@@ -527,6 +539,7 @@ export class JSONDocument {
 				matchingSchemas,
 				context,
 			);
+
 			return matchingSchemas.schemas;
 		}
 		return [];
@@ -534,6 +547,7 @@ export class JSONDocument {
 }
 function getSchemaDraft(schema: JSONSchema, fallBack = SchemaDraft.v2020_12) {
 	let schemaId = schema.$schema;
+
 	if (schemaId) {
 		return schemaDraftFromId[schemaId] ?? fallBack;
 	}
@@ -565,15 +579,22 @@ function validate(
 	switch (node.type) {
 		case "object":
 			_validateObjectNode(node);
+
 			break;
+
 		case "array":
 			_validateArrayNode(node);
+
 			break;
+
 		case "string":
 			_validateStringNode(node);
+
 			break;
+
 		case "number":
 			_validateNumberNode(node);
+
 			break;
 	}
 
@@ -612,6 +633,7 @@ function validate(
 		if (Array.isArray(schema.allOf)) {
 			for (const subSchemaRef of schema.allOf) {
 				const subValidationResult = new ValidationResult();
+
 				const subMatchingSchemas = matchingSchemas.newSub();
 				validate(
 					node,
@@ -625,8 +647,10 @@ function validate(
 			}
 		}
 		const notSchema = asSchema(schema.not);
+
 		if (notSchema) {
 			const subValidationResult = new ValidationResult();
+
 			const subMatchingSchemas = matchingSchemas.newSub();
 			validate(
 				node,
@@ -635,6 +659,7 @@ function validate(
 				subMatchingSchemas,
 				context,
 			);
+
 			if (!subValidationResult.hasProblems()) {
 				validationResult.problems.push({
 					location: { offset: node.offset, length: node.length },
@@ -663,9 +688,12 @@ function validate(
 						matchingSchemas: ISchemaCollector;
 				  }
 				| undefined = undefined;
+
 			for (const subSchemaRef of alternatives) {
 				const subSchema = asSchema(subSchemaRef);
+
 				const subValidationResult = new ValidationResult();
+
 				const subMatchingSchemas = matchingSchemas.newSub();
 				validate(
 					node,
@@ -674,6 +702,7 @@ function validate(
 					subMatchingSchemas,
 					context,
 				);
+
 				if (!subValidationResult.hasProblems()) {
 					matches.push(subSchema);
 				}
@@ -702,6 +731,7 @@ function validate(
 						const compareResult = subValidationResult.compare(
 							bestMatch.validationResult,
 						);
+
 						if (compareResult > 0) {
 							// our node is the best matching so far
 							bestMatch = {
@@ -734,6 +764,7 @@ function validate(
 			}
 			return matches.length;
 		};
+
 		if (Array.isArray(schema.anyOf)) {
 			testAlternatives(schema.anyOf, false);
 		}
@@ -743,6 +774,7 @@ function validate(
 
 		const testBranch = (schema: JSONSchemaRef) => {
 			const subValidationResult = new ValidationResult();
+
 			const subMatchingSchemas = matchingSchemas.newSub();
 
 			validate(
@@ -763,7 +795,9 @@ function validate(
 			elseSchema?: JSONSchemaRef,
 		) => {
 			const subSchema = asSchema(ifSchema);
+
 			const subValidationResult = new ValidationResult();
+
 			const subMatchingSchemas = matchingSchemas.newSub();
 
 			validate(
@@ -786,6 +820,7 @@ function validate(
 		};
 
 		const ifSchema = asSchema(schema.if);
+
 		if (ifSchema) {
 			testCondition(
 				ifSchema,
@@ -796,15 +831,19 @@ function validate(
 
 		if (Array.isArray(schema.enum)) {
 			const val = getNodeValue(node);
+
 			let enumValueMatch = false;
+
 			for (const e of schema.enum) {
 				if (equals(val, e)) {
 					enumValueMatch = true;
+
 					break;
 				}
 			}
 			validationResult.enumValues = schema.enum;
 			validationResult.enumValueMatch = enumValueMatch;
+
 			if (!enumValueMatch) {
 				validationResult.problems.push({
 					location: { offset: node.offset, length: node.length },
@@ -823,6 +862,7 @@ function validate(
 
 		if (isDefined(schema.const)) {
 			const val = getNodeValue(node);
+
 			if (!equals(val, schema.const)) {
 				validationResult.problems.push({
 					location: { offset: node.offset, length: node.length },
@@ -842,9 +882,11 @@ function validate(
 		}
 
 		let deprecationMessage = schema.deprecationMessage;
+
 		if (deprecationMessage || schema.deprecated) {
 			deprecationMessage =
 				deprecationMessage || l10n.t("Value is deprecated");
+
 			let targetNode =
 				node.parent?.type === "property" ? node.parent : node;
 
@@ -869,6 +911,7 @@ function validate(
 			const parts = /^(-?\d+)(?:\.(\d+))?(?:e([-+]\d+))?$/.exec(
 				float.toString(),
 			);
+
 			return (
 				parts && {
 					value: Number(parts[1] + (parts[2] || "")),
@@ -879,17 +922,21 @@ function validate(
 		}
 		if (isNumber(schema.multipleOf)) {
 			let remainder: number = -1;
+
 			if (Number.isInteger(schema.multipleOf)) {
 				remainder = val % schema.multipleOf;
 			} else {
 				let normMultipleOf = normalizeFloats(schema.multipleOf);
+
 				let normValue = normalizeFloats(val);
+
 				if (normMultipleOf && normValue) {
 					const multiplier =
 						10 **
 						Math.abs(
 							normValue.multiplier - normMultipleOf.multiplier,
 						);
+
 					if (normValue.multiplier < normMultipleOf.multiplier) {
 						normValue.value *= multiplier;
 					} else {
@@ -933,6 +980,7 @@ function validate(
 			schema.minimum,
 			schema.exclusiveMinimum,
 		);
+
 		if (isNumber(exclusiveMinimum) && val <= exclusiveMinimum) {
 			validationResult.problems.push({
 				location: { offset: node.offset, length: node.length },
@@ -946,6 +994,7 @@ function validate(
 			schema.maximum,
 			schema.exclusiveMaximum,
 		);
+
 		if (isNumber(exclusiveMaximum) && val >= exclusiveMaximum) {
 			validationResult.problems.push({
 				location: { offset: node.offset, length: node.length },
@@ -956,6 +1005,7 @@ function validate(
 			});
 		}
 		const minimum = getLimit(schema.minimum, schema.exclusiveMinimum);
+
 		if (isNumber(minimum) && val < minimum) {
 			validationResult.problems.push({
 				location: { offset: node.offset, length: node.length },
@@ -963,6 +1013,7 @@ function validate(
 			});
 		}
 		const maximum = getLimit(schema.maximum, schema.exclusiveMaximum);
+
 		if (isNumber(maximum) && val > maximum) {
 			validationResult.problems.push({
 				location: { offset: node.offset, length: node.length },
@@ -1000,6 +1051,7 @@ function validate(
 
 		if (isString(schema.pattern)) {
 			const regex = extendedRegExp(schema.pattern);
+
 			if (!regex?.test(node.value)) {
 				validationResult.problems.push({
 					location: { offset: node.offset, length: node.length },
@@ -1020,6 +1072,7 @@ function validate(
 				case "uri-reference":
 					{
 						let errorMessage;
+
 						if (!node.value) {
 							errorMessage = l10n.t("URI expected.");
 						} else {
@@ -1027,6 +1080,7 @@ function validate(
 								/^(([^:/?#]+?):)?(\/\/([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?/.exec(
 									node.value,
 								);
+
 							if (!match) {
 								errorMessage = l10n.t("URI is expected.");
 							} else if (!match[2] && schema.format === "uri") {
@@ -1052,6 +1106,7 @@ function validate(
 						}
 					}
 					break;
+
 				case "color-hex":
 				case "date-time":
 				case "date":
@@ -1061,6 +1116,7 @@ function validate(
 				case "ipv4":
 				case "ipv6":
 					const format = formats[schema.format];
+
 					if (!node.value || !format.pattern.exec(node.value)) {
 						validationResult.problems.push({
 							location: {
@@ -1079,7 +1135,9 @@ function validate(
 	}
 	function _validateArrayNode(node: ArrayASTNode): void {
 		let prefixItemsSchemas: JSONSchemaRef[] | undefined;
+
 		let additionalItemSchema: JSONSchemaRef | undefined;
+
 		if (context.schemaDraft >= SchemaDraft.v2020_12) {
 			prefixItemsSchemas = schema.prefixItems;
 			additionalItemSchema = !Array.isArray(schema.items)
@@ -1094,13 +1152,19 @@ function validate(
 				: schema.additionalItems;
 		}
 		let index = 0;
+
 		if (prefixItemsSchemas !== undefined) {
 			const max = Math.min(prefixItemsSchemas.length, node.items.length);
+
 			for (; index < max; index++) {
 				const subSchemaRef = prefixItemsSchemas[index];
+
 				const subSchema = asSchema(subSchemaRef);
+
 				const itemValidationResult = new ValidationResult();
+
 				const item = node.items[index];
+
 				if (item) {
 					validate(
 						item,
@@ -1146,10 +1210,13 @@ function validate(
 		}
 
 		const containsSchema = asSchema(schema.contains);
+
 		if (containsSchema) {
 			let containsCount = 0;
+
 			for (let index = 0; index < node.items.length; index++) {
 				const item = node.items[index];
+
 				const itemValidationResult = new ValidationResult();
 				validate(
 					item,
@@ -1158,8 +1225,10 @@ function validate(
 					NoOpSchemaCollector.instance,
 					context,
 				);
+
 				if (!itemValidationResult.hasProblems()) {
 					containsCount++;
+
 					if (context.schemaDraft >= SchemaDraft.v2020_12) {
 						validationResult.processedProperties.add(String(index));
 					}
@@ -1204,6 +1273,7 @@ function validate(
 		}
 
 		const unevaluatedItems = schema.unevaluatedItems;
+
 		if (unevaluatedItems !== undefined) {
 			for (let i = 0; i < node.items.length; i++) {
 				if (!validationResult.processedProperties.has(String(i))) {
@@ -1258,9 +1328,11 @@ function validate(
 
 		if (schema.uniqueItems === true) {
 			const values = getNodeValue(node);
+
 			function hasDuplicates() {
 				for (let i = 0; i < values.length - 1; i++) {
 					const value = values[i];
+
 					for (let j = i + 1; j < values.length; j++) {
 						if (equals(value, values[j])) {
 							return true;
@@ -1281,7 +1353,9 @@ function validate(
 	function _validateObjectNode(node: ObjectASTNode): void {
 		const seenKeys: { [key: string]: ASTNode | undefined } =
 			Object.create(null);
+
 		const unprocessedProperties: Set<string> = new Set();
+
 		for (const propertyNode of node.properties) {
 			const key = propertyNode.keyNode.value;
 			seenKeys[key] = propertyNode.valueNode;
@@ -1295,6 +1369,7 @@ function validate(
 						node.parent &&
 						node.parent.type === "property" &&
 						node.parent.keyNode;
+
 					const location = keyNode
 						? { offset: keyNode.offset, length: keyNode.length }
 						: { offset: node.offset, length: 1 };
@@ -1317,8 +1392,11 @@ function validate(
 		if (schema.properties) {
 			for (const propertyName of Object.keys(schema.properties)) {
 				propertyProcessed(propertyName);
+
 				const propertySchema = schema.properties[propertyName];
+
 				const child = seenKeys[propertyName];
+
 				if (child) {
 					if (isBoolean(propertySchema)) {
 						if (!propertySchema) {
@@ -1361,15 +1439,20 @@ function validate(
 				schema.patternProperties,
 			)) {
 				const regex = extendedRegExp(propertyPattern);
+
 				if (regex) {
 					const processed = [];
+
 					for (const propertyName of unprocessedProperties) {
 						if (regex.test(propertyName)) {
 							processed.push(propertyName);
+
 							const child = seenKeys[propertyName];
+
 							if (child) {
 								const propertySchema =
 									schema.patternProperties[propertyPattern];
+
 								if (isBoolean(propertySchema)) {
 									if (!propertySchema) {
 										const propertyNode = <PropertyASTNode>(
@@ -1416,10 +1499,13 @@ function validate(
 		}
 
 		const additionalProperties = schema.additionalProperties;
+
 		if (additionalProperties !== undefined) {
 			for (const propertyName of unprocessedProperties) {
 				propertyProcessed(propertyName);
+
 				const child = seenKeys[propertyName];
+
 				if (child) {
 					if (additionalProperties === false) {
 						const propertyNode = <PropertyASTNode>child.parent;
@@ -1453,12 +1539,16 @@ function validate(
 			}
 		}
 		const unevaluatedProperties = schema.unevaluatedProperties;
+
 		if (unevaluatedProperties !== undefined) {
 			const processed = [];
+
 			for (const propertyName of unprocessedProperties) {
 				if (!validationResult.processedProperties.has(propertyName)) {
 					processed.push(propertyName);
+
 					const child = seenKeys[propertyName];
+
 					if (child) {
 						if (unevaluatedProperties === false) {
 							const propertyNode = <PropertyASTNode>child.parent;
@@ -1522,7 +1612,9 @@ function validate(
 		if (schema.dependentRequired) {
 			for (const key in schema.dependentRequired) {
 				const prop = seenKeys[key];
+
 				const propertyDeps = schema.dependentRequired[key];
+
 				if (prop && Array.isArray(propertyDeps)) {
 					_validatePropertyDependencies(key, propertyDeps);
 				}
@@ -1531,7 +1623,9 @@ function validate(
 		if (schema.dependentSchemas) {
 			for (const key in schema.dependentSchemas) {
 				const prop = seenKeys[key];
+
 				const propertyDeps = schema.dependentSchemas[key];
+
 				if (prop && isObject(propertyDeps)) {
 					_validatePropertyDependencies(key, propertyDeps);
 				}
@@ -1541,6 +1635,7 @@ function validate(
 		if (schema.dependencies) {
 			for (const key in schema.dependencies) {
 				const prop = seenKeys[key];
+
 				if (prop) {
 					_validatePropertyDependencies(
 						key,
@@ -1551,9 +1646,11 @@ function validate(
 		}
 
 		const propertyNames = asSchema(schema.propertyNames);
+
 		if (propertyNames) {
 			for (const f of node.properties) {
 				const key = f.keyNode;
+
 				if (key) {
 					validate(
 						key,
@@ -1590,6 +1687,7 @@ function validate(
 				}
 			} else {
 				const propertySchema = asSchema(propertyDep);
+
 				if (propertySchema) {
 					const propertyValidationResult = new ValidationResult();
 					validate(
@@ -1613,8 +1711,11 @@ export function parse(
 	config?: JSONDocumentConfig,
 ): JSONDocument {
 	const problems: Diagnostic[] = [];
+
 	let lastProblemOffset = -1;
+
 	const text = textDocument.getText();
+
 	const scanner = Json.createScanner(text, false);
 
 	const commentRanges: Range[] | undefined =
@@ -1624,6 +1725,7 @@ export function parse(
 		while (true) {
 			const token = scanner.scan();
 			_checkScanError();
+
 			switch (token) {
 				case Json.SyntaxKind.LineCommentTrivia:
 				case Json.SyntaxKind.BlockCommentTrivia:
@@ -1641,9 +1743,11 @@ export function parse(
 						);
 					}
 					break;
+
 				case Json.SyntaxKind.Trivia:
 				case Json.SyntaxKind.LineBreakTrivia:
 					break;
+
 				default:
 					return token;
 			}
@@ -1653,6 +1757,7 @@ export function parse(
 	function _accept(token: Json.SyntaxKind): boolean {
 		if (scanner.getToken() === token) {
 			_scanNext();
+
 			return true;
 		}
 		return false;
@@ -1691,9 +1796,12 @@ export function parse(
 		skipUntil: Json.SyntaxKind[] = [],
 	): T | undefined {
 		let start = scanner.getTokenOffset();
+
 		let end = scanner.getTokenOffset() + scanner.getTokenLength();
+
 		if (start === end && start > 0) {
 			start--;
+
 			while (start > 0 && /\s/.test(text.charAt(start))) {
 				start--;
 			}
@@ -1706,9 +1814,11 @@ export function parse(
 		}
 		if (skipUntilAfter.length + skipUntil.length > 0) {
 			let token = scanner.getToken();
+
 			while (token !== Json.SyntaxKind.EOF) {
 				if (skipUntilAfter.indexOf(token) !== -1) {
 					_scanNext();
+
 					break;
 				} else if (skipUntil.indexOf(token) !== -1) {
 					break;
@@ -1726,31 +1836,41 @@ export function parse(
 					l10n.t("Invalid unicode sequence in string."),
 					ErrorCode.InvalidUnicode,
 				);
+
 				return true;
+
 			case Json.ScanError.InvalidEscapeCharacter:
 				_error(
 					l10n.t("Invalid escape character in string."),
 					ErrorCode.InvalidEscapeCharacter,
 				);
+
 				return true;
+
 			case Json.ScanError.UnexpectedEndOfNumber:
 				_error(
 					l10n.t("Unexpected end of number."),
 					ErrorCode.UnexpectedEndOfNumber,
 				);
+
 				return true;
+
 			case Json.ScanError.UnexpectedEndOfComment:
 				_error(
 					l10n.t("Unexpected end of comment."),
 					ErrorCode.UnexpectedEndOfComment,
 				);
+
 				return true;
+
 			case Json.ScanError.UnexpectedEndOfString:
 				_error(
 					l10n.t("Unexpected end of string."),
 					ErrorCode.UnexpectedEndOfString,
 				);
+
 				return true;
+
 			case Json.ScanError.InvalidCharacter:
 				_error(
 					l10n.t(
@@ -1758,6 +1878,7 @@ export function parse(
 					),
 					ErrorCode.InvalidCharacter,
 				);
+
 				return true;
 		}
 		return false;
@@ -1784,7 +1905,9 @@ export function parse(
 		_scanNext(); // consume OpenBracketToken
 
 		const count = 0;
+
 		let needsComma = false;
+
 		while (
 			scanner.getToken() !== Json.SyntaxKind.CloseBracketToken &&
 			scanner.getToken() !== Json.SyntaxKind.EOF
@@ -1810,6 +1933,7 @@ export function parse(
 				_error(l10n.t("Expected comma"), ErrorCode.CommaExpected);
 			}
 			const item = _parseValue(node);
+
 			if (!item) {
 				_error(
 					l10n.t("Value expected"),
@@ -1849,7 +1973,9 @@ export function parse(
 			scanner.getTokenOffset(),
 			keyPlaceholder,
 		);
+
 		let key = _parseString(node);
+
 		if (!key) {
 			if (scanner.getToken() === Json.SyntaxKind.Unknown) {
 				// give a more helpful error message
@@ -1857,6 +1983,7 @@ export function parse(
 					l10n.t("Property keys must be doublequoted"),
 					ErrorCode.PropertyKeysMustBeDoublequoted,
 				);
+
 				const keyNode = new StringASTNodeImpl(
 					node,
 					scanner.getTokenOffset(),
@@ -1875,6 +2002,7 @@ export function parse(
 		// Multiple instances of "//" are okay.
 		if (key.value !== "//") {
 			const seen = keysSeen[key.value];
+
 			if (seen) {
 				_errorAtRange(
 					l10n.t("Duplicate object key"),
@@ -1883,6 +2011,7 @@ export function parse(
 					node.keyNode.offset + node.keyNode.length,
 					DiagnosticSeverity.Warning,
 				);
+
 				if (isObject(seen)) {
 					_errorAtRange(
 						l10n.t("Duplicate object key"),
@@ -1903,16 +2032,19 @@ export function parse(
 			_scanNext(); // consume ColonToken
 		} else {
 			_error(l10n.t("Colon expected"), ErrorCode.ColonExpected);
+
 			if (
 				scanner.getToken() === Json.SyntaxKind.StringLiteral &&
 				textDocument.positionAt(key.offset + key.length).line <
 					textDocument.positionAt(scanner.getTokenOffset()).line
 			) {
 				node.length = key.length;
+
 				return node;
 			}
 		}
 		const value = _parseValue(node);
+
 		if (!value) {
 			return _error(
 				l10n.t("Value expected"),
@@ -1924,6 +2056,7 @@ export function parse(
 		}
 		node.valueNode = value;
 		node.length = value.offset + value.length - node.offset;
+
 		return node;
 	}
 
@@ -1934,6 +2067,7 @@ export function parse(
 			return undefined;
 		}
 		const node = new ObjectASTNodeImpl(parent, scanner.getTokenOffset());
+
 		const keysSeen: any = Object.create(null);
 		_scanNext(); // consume OpenBraceToken
 		let needsComma = false;
@@ -1966,6 +2100,7 @@ export function parse(
 				_error(l10n.t("Expected comma"), ErrorCode.CommaExpected);
 			}
 			const property = _parseProperty(node, keysSeen);
+
 			if (!property) {
 				_error(
 					l10n.t("Property expected"),
@@ -2014,10 +2149,13 @@ export function parse(
 		}
 
 		const node = new NumberASTNodeImpl(parent, scanner.getTokenOffset());
+
 		if (scanner.getTokenError() === Json.ScanError.None) {
 			const tokenValue = scanner.getTokenValue();
+
 			try {
 				const numberValue = JSON.parse(tokenValue);
+
 				if (!isNumber(numberValue)) {
 					return _error(
 						l10n.t("Invalid number format."),
@@ -2040,12 +2178,14 @@ export function parse(
 
 	function _parseLiteral(parent: ASTNode | undefined): ASTNode | undefined {
 		let node: ASTNodeImpl;
+
 		switch (scanner.getToken()) {
 			case Json.SyntaxKind.NullKeyword:
 				return _finalize(
 					new NullASTNodeImpl(parent, scanner.getTokenOffset()),
 					true,
 				);
+
 			case Json.SyntaxKind.TrueKeyword:
 				return _finalize(
 					new BooleanASTNodeImpl(
@@ -2055,6 +2195,7 @@ export function parse(
 					),
 					true,
 				);
+
 			case Json.SyntaxKind.FalseKeyword:
 				return _finalize(
 					new BooleanASTNodeImpl(
@@ -2064,6 +2205,7 @@ export function parse(
 					),
 					true,
 				);
+
 			default:
 				return undefined;
 		}
@@ -2080,9 +2222,12 @@ export function parse(
 	}
 
 	let _root: ASTNode | undefined = undefined;
+
 	const token = _scanNext();
+
 	if (token !== Json.SyntaxKind.EOF) {
 		_root = _parseValue(_root);
+
 		if (!_root) {
 			_error(
 				l10n.t("Expected a JSON object, array or literal."),

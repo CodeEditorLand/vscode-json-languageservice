@@ -32,8 +32,10 @@ export class PropertyTree {
 
 	addChildProperty(childProperty: PropertyTree): PropertyTree {
 		childProperty.parent = this;
+
 		if (this.childrenProperties.length > 0) {
 			let insertionIndex = 0;
+
 			if (childProperty.noKeyName) {
 				insertionIndex = this.childrenProperties.length;
 			} else {
@@ -59,7 +61,9 @@ function compareProperties(
 	propertyTree2: PropertyTree,
 ) {
 	const propertyName1 = propertyTree1.propertyName.toLowerCase();
+
 	const propertyName2 = propertyTree2.propertyName.toLowerCase();
+
 	if (propertyName1 < propertyName2) {
 		return -1;
 	} else if (propertyName1 > propertyName2) {
@@ -74,12 +78,15 @@ function binarySearchOnPropertyArray(
 	compare_fn: (p1: PropertyTree, p2: PropertyTree) => number,
 ) {
 	const propertyName = propertyTree.propertyName.toLowerCase();
+
 	const firstPropertyInArrayName =
 		propertyTreeArray[0].propertyName.toLowerCase();
+
 	const lastPropertyInArrayName =
 		propertyTreeArray[
 			propertyTreeArray.length - 1
 		].propertyName.toLowerCase();
+
 	if (propertyName < firstPropertyInArrayName) {
 		return 0;
 	}
@@ -87,10 +94,14 @@ function binarySearchOnPropertyArray(
 		return propertyTreeArray.length;
 	}
 	let m = 0;
+
 	let n = propertyTreeArray.length - 1;
+
 	while (m <= n) {
 		let k = (n + m) >> 1;
+
 		let cmp = compare_fn(propertyTree, propertyTreeArray[k]);
+
 		if (cmp > 0) {
 			m = k + 1;
 		} else if (cmp < 0) {

@@ -13,8 +13,10 @@ export function format(
 	formattingRange?: Range | undefined,
 ): TextEdit[] {
 	let range: JSONCRange | undefined = undefined;
+
 	if (formattingRange) {
 		const offset = documentToFormat.offsetAt(formattingRange.start);
+
 		const length = documentToFormat.offsetAt(formattingRange.end) - offset;
 		range = { offset, length };
 	}
@@ -25,6 +27,7 @@ export function format(
 		eol: "\n",
 		keepLines: formattingOptions?.keepLines === true,
 	};
+
 	return formatJSON(documentToFormat.getText(), range, options).map(
 		(edit) => {
 			return TextEdit.replace(

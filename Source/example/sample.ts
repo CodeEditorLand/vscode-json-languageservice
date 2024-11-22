@@ -2,11 +2,14 @@ import { getLanguageService, TextDocument } from "../jsonLanguageService";
 
 async function main() {
 	const jsonContentUri = "foo://server/example.data.json";
+
 	const jsonContent = `{
        "name": 12
        "country": "Ireland"
     }`;
+
 	const jsonSchemaUri = "foo://server/data.schema.json";
+
 	const jsonSchema = {
 		"type": "object",
 		"properties": {

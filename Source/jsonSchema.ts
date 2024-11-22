@@ -10,6 +10,7 @@ export interface JSONSchema {
 	$schema?: string;
 	type?: string | string[];
 	title?: string;
+
 	default?: any;
 	definitions?: { [name: string]: JSONSchema };
 	description?: string;
@@ -39,6 +40,7 @@ export interface JSONSchema {
 	oneOf?: JSONSchemaRef[];
 	not?: JSONSchemaRef;
 	enum?: any[];
+
 	format?: string;
 
 	// schema draft 06
@@ -49,8 +51,10 @@ export interface JSONSchema {
 
 	// schema draft 07
 	$comment?: string;
+
 	if?: JSONSchemaRef;
 	then?: JSONSchemaRef;
+
 	else?: JSONSchemaRef;
 
 	// schema 2019-09
