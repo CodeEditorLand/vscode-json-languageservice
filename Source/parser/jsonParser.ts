@@ -229,9 +229,11 @@ export class ObjectASTNodeImpl extends ASTNodeImpl implements ObjectASTNode {
 	}
 }
 export function asSchema(schema: JSONSchemaRef): JSONSchema;
+
 export function asSchema(
 	schema: JSONSchemaRef | undefined,
 ): JSONSchema | undefined;
+
 export function asSchema(
 	schema: JSONSchemaRef | undefined,
 ): JSONSchema | undefined {

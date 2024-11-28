@@ -30,6 +30,7 @@ export interface JSONWorkerContribution {
 	resolveCompletion?(item: CompletionItem): PromiseLike<CompletionItem>;
 }
 export type Segment = string | number;
+
 export type JSONPath = Segment[];
 
 export type JSONCompletionItem = CompletionItem & { insertText: string };

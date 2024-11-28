@@ -56,6 +56,7 @@ export type JSONDocument = {
 		includeRightBound?: boolean,
 	): ASTNode | undefined;
 };
+
 export * from "./jsonLanguageTypes";
 
 export interface LanguageService {
