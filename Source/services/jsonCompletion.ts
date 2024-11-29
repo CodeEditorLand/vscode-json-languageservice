@@ -42,7 +42,9 @@ const propertyCommitCharacters = [":"];
 
 export class JSONCompletion {
 	private supportsMarkdown: boolean | undefined;
+
 	private supportsCommitCharacters: boolean | undefined;
+
 	private labelDetailsSupport: boolean | undefined;
 
 	constructor(
@@ -64,6 +66,7 @@ export class JSONCompletion {
 				}
 			}
 		}
+
 		return this.promiseConstructor.resolve(item);
 	}
 
@@ -86,6 +89,7 @@ export class JSONCompletion {
 		if (this.isInComment(document, node ? node.offset : 0, offset)) {
 			return Promise.resolve(result);
 		}
+
 		if (node && offset === node.offset + node.length && offset > 0) {
 			const ch = text[offset - 1];
 
@@ -94,6 +98,7 @@ export class JSONCompletion {
 				(node.type === "array" && ch === "]")
 			) {
 				// after ] or }
+
 				node = node.parent;
 			}
 		}
@@ -119,6 +124,7 @@ export class JSONCompletion {
 			if (overwriteStart > 0 && text[overwriteStart - 1] === '"') {
 				overwriteStart--;
 			}
+
 			overwriteRange = Range.create(
 				document.positionAt(overwriteStart),
 				position,
@@ -146,6 +152,7 @@ export class JSONCompletion {
 							label = shortendedLabel;
 						}
 					}
+
 					suggestion.textEdit = TextEdit.replace(
 						overwriteRange,
 						suggestion.insertText,
@@ -157,16 +164,21 @@ export class JSONCompletion {
 								? propertyCommitCharacters
 								: valueCommitCharacters;
 					}
+
 					suggestion.label = label;
+
 					proposed.set(label, suggestion);
+
 					result.items.push(suggestion);
 				} else {
 					if (!existing.documentation) {
 						existing.documentation = suggestion.documentation;
 					}
+
 					if (!existing.detail) {
 						existing.detail = suggestion.detail;
 					}
+
 					if (!existing.labelDetails) {
 						existing.labelDetails = suggestion.labelDetails;
 					}
@@ -204,7 +216,9 @@ export class JSONCompletion {
 							parent.keyNode === node
 						) {
 							addValue = !parent.valueNode;
+
 							currentProperty = parent;
+
 							currentKey = text.substr(
 								node.offset + 1,
 								node.length - 2,
@@ -225,6 +239,7 @@ export class JSONCompletion {
 					}
 					// don't suggest properties that are already present
 					const properties = node.properties;
+
 					properties.forEach((p) => {
 						if (!currentProperty || currentProperty !== p) {
 							proposed.set(
@@ -264,6 +279,7 @@ export class JSONCompletion {
 					}
 
 					const location = Parser.getNodePath(node);
+
 					this.contributions.forEach((contribution) => {
 						const collectPromise =
 							contribution.collectPropertyCompletions(
@@ -297,6 +313,7 @@ export class JSONCompletion {
 							insertTextFormat: InsertTextFormat.Snippet,
 							documentation: "",
 						});
+
 						collector.setAsIncomplete();
 					}
 				}
@@ -325,6 +342,7 @@ export class JSONCompletion {
 						collector,
 					);
 				}
+
 				if (this.contributions.length > 0) {
 					this.getContributedValueCompletions(
 						doc,
@@ -351,16 +369,19 @@ export class JSONCompletion {
 							) {
 								offsetForSeparator = node.offset + node.length;
 							}
+
 							const separatorAfter = this.evaluateSeparatorAfter(
 								document,
 								offsetForSeparator,
 							);
+
 							this.addFillerValueCompletions(
 								types,
 								separatorAfter,
 								collector,
 							);
 						}
+
 						return result;
 					});
 			});
@@ -378,6 +399,7 @@ export class JSONCompletion {
 			schema.schema,
 			node.offset,
 		);
+
 		matchingSchemas.forEach((s) => {
 			if (s.node === node && !s.inverted) {
 				const schemaProperties = s.schema.properties;
@@ -414,6 +436,7 @@ export class JSONCompletion {
 								proposal.sortText =
 									propertySchema.suggestSortText;
 							}
+
 							if (
 								proposal.insertText &&
 								endsWith(
@@ -426,10 +449,12 @@ export class JSONCompletion {
 									command: "editor.action.triggerSuggest",
 								};
 							}
+
 							collector.add(proposal);
 						}
 					});
 				}
+
 				const schemaPropertyNames = s.schema.propertyNames;
 
 				if (
@@ -468,6 +493,7 @@ export class JSONCompletion {
 							proposal.sortText =
 								schemaPropertyNames.suggestSortText;
 						}
+
 						if (
 							proposal.insertText &&
 							endsWith(proposal.insertText, `$1${separatorAfter}`)
@@ -477,13 +503,16 @@ export class JSONCompletion {
 								command: "editor.action.triggerSuggest",
 							};
 						}
+
 						collector.add(proposal);
 					};
 
 					if (schemaPropertyNames.enum) {
 						for (
 							let i = 0;
+
 							i < schemaPropertyNames.enum.length;
+
 							i++
 						) {
 							let enumDescription = undefined;
@@ -505,12 +534,14 @@ export class JSONCompletion {
 								enumDescription =
 									schemaPropertyNames.enumDescriptions[i];
 							}
+
 							propertyNameCompletionItem(
 								schemaPropertyNames.enum[i],
 								enumDescription,
 							);
 						}
 					}
+
 					if (schemaPropertyNames.const) {
 						propertyNameCompletionItem(schemaPropertyNames.const);
 					}
@@ -528,6 +559,7 @@ export class JSONCompletion {
 		const collectCompletionsForSimilarObject = (obj: ObjectASTNode) => {
 			obj.properties.forEach((p) => {
 				const key = p.keyNode.value;
+
 				collector.add({
 					kind: CompletionItemKind.Property,
 					label: key,
@@ -554,6 +586,7 @@ export class JSONCompletion {
 					) {
 						collectCompletionsForSimilarObject(n.valueNode);
 					}
+
 					return true;
 				});
 			} else if (node.parent.type === "array") {
@@ -598,6 +631,7 @@ export class JSONCompletion {
 				node.type === "null")
 		) {
 			offsetForSeparator = node.offset + node.length;
+
 			node = node.parent;
 		}
 
@@ -609,6 +643,7 @@ export class JSONCompletion {
 				insertTextFormat: InsertTextFormat.Snippet,
 				documentation: "",
 			});
+
 			collector.add({
 				kind: this.getSuggestionKind("array"),
 				label: "Empty array",
@@ -619,6 +654,7 @@ export class JSONCompletion {
 
 			return;
 		}
+
 		const separatorAfter = this.evaluateSeparatorAfter(
 			document,
 			offsetForSeparator,
@@ -638,6 +674,7 @@ export class JSONCompletion {
 					documentation: "",
 				});
 			}
+
 			if (value.type === "boolean") {
 				this.addBooleanValueCompletion(
 					!value.value,
@@ -670,6 +707,7 @@ export class JSONCompletion {
 					) {
 						collectSuggestionsForValues(n.valueNode);
 					}
+
 					return true;
 				});
 
@@ -682,6 +720,7 @@ export class JSONCompletion {
 				}
 			}
 		}
+
 		if (node.type === "array") {
 			if (node.parent && node.parent.type === "property") {
 				// suggest items of an array at the same key
@@ -696,6 +735,7 @@ export class JSONCompletion {
 					) {
 						n.valueNode.items.forEach(collectSuggestionsForValues);
 					}
+
 					return true;
 				});
 			} else {
@@ -728,7 +768,9 @@ export class JSONCompletion {
 				node.type === "null")
 		) {
 			offsetForSeparator = node.offset + node.length;
+
 			valueNode = node;
+
 			node = node.parent;
 		}
 
@@ -744,7 +786,9 @@ export class JSONCompletion {
 			if (valueNode && offset > valueNode.offset + valueNode.length) {
 				return; // we are past the value node
 			}
+
 			parentKey = node.keyNode.value;
+
 			node = node.parent;
 		}
 
@@ -767,6 +811,7 @@ export class JSONCompletion {
 
 						if (s.schema.uniqueItems) {
 							const existingValues = new Set<any>();
+
 							node.children.forEach((n) => {
 								if (n.type !== "array" && n.type !== "object") {
 									existingValues.add(
@@ -776,6 +821,7 @@ export class JSONCompletion {
 									);
 								}
 							});
+
 							c = {
 								...collector,
 								add(suggestion: JSONCompletionItem) {
@@ -785,6 +831,7 @@ export class JSONCompletion {
 								},
 							};
 						}
+
 						if (Array.isArray(s.schema.items)) {
 							const index = this.findItemAtOffset(
 								node,
@@ -809,6 +856,7 @@ export class JSONCompletion {
 							);
 						}
 					}
+
 					if (parentKey !== undefined) {
 						let propertyMatched = false;
 
@@ -818,6 +866,7 @@ export class JSONCompletion {
 
 							if (propertySchema) {
 								propertyMatched = true;
+
 								this.addSchemaValueCompletions(
 									propertySchema,
 									separatorAfter,
@@ -826,6 +875,7 @@ export class JSONCompletion {
 								);
 							}
 						}
+
 						if (s.schema.patternProperties && !propertyMatched) {
 							for (const pattern of Object.keys(
 								s.schema.patternProperties,
@@ -837,6 +887,7 @@ export class JSONCompletion {
 
 									const propertySchema =
 										s.schema.patternProperties[pattern];
+
 									this.addSchemaValueCompletions(
 										propertySchema,
 										separatorAfter,
@@ -846,9 +897,11 @@ export class JSONCompletion {
 								}
 							}
 						}
+
 						if (s.schema.additionalProperties && !propertyMatched) {
 							const propertySchema =
 								s.schema.additionalProperties;
+
 							this.addSchemaValueCompletions(
 								propertySchema,
 								separatorAfter,
@@ -859,17 +912,21 @@ export class JSONCompletion {
 					}
 				}
 			}
+
 			if (parentKey === "$schema" && !node.parent) {
 				this.addDollarSchemaCompletions(separatorAfter, collector);
 			}
+
 			if (types["boolean"]) {
 				this.addBooleanValueCompletion(true, separatorAfter, collector);
+
 				this.addBooleanValueCompletion(
 					false,
 					separatorAfter,
 					collector,
 				);
 			}
+
 			if (types["null"]) {
 				this.addNullValueCompletion(separatorAfter, collector);
 			}
@@ -904,6 +961,7 @@ export class JSONCompletion {
 			) {
 				node = node.parent;
 			}
+
 			if (
 				node &&
 				node.type === "property" &&
@@ -919,6 +977,7 @@ export class JSONCompletion {
 					node.parent
 				) {
 					const location = Parser.getNodePath(node.parent);
+
 					this.contributions.forEach((contribution) => {
 						const collectPromise =
 							contribution.collectValueCompletions(
@@ -945,7 +1004,9 @@ export class JSONCompletion {
 	): void {
 		if (typeof schema === "object") {
 			this.addEnumValueCompletions(schema, separatorAfter, collector);
+
 			this.addDefaultValueCompletions(schema, separatorAfter, collector);
+
 			this.collectTypes(schema, types);
 
 			if (Array.isArray(schema.allOf)) {
@@ -958,6 +1019,7 @@ export class JSONCompletion {
 					),
 				);
 			}
+
 			if (Array.isArray(schema.anyOf)) {
 				schema.anyOf.forEach((s) =>
 					this.addSchemaValueCompletions(
@@ -968,6 +1030,7 @@ export class JSONCompletion {
 					),
 				);
 			}
+
 			if (Array.isArray(schema.oneOf)) {
 				schema.oneOf.forEach((s) =>
 					this.addSchemaValueCompletions(
@@ -996,8 +1059,10 @@ export class JSONCompletion {
 
 			for (let i = arrayDepth; i > 0; i--) {
 				value = [value];
+
 				type = "array";
 			}
+
 			const completionItem: JSONCompletionItem = {
 				kind: this.getSuggestionKind(type),
 				label: this.getLabelForValue(value),
@@ -1012,9 +1077,12 @@ export class JSONCompletion {
 			} else {
 				completionItem.detail = l10n.t("Default value");
 			}
+
 			collector.add(completionItem);
+
 			hasProposals = true;
 		}
+
 		if (Array.isArray(schema.examples)) {
 			schema.examples.forEach((example) => {
 				let type = schema.type;
@@ -1023,8 +1091,10 @@ export class JSONCompletion {
 
 				for (let i = arrayDepth; i > 0; i--) {
 					value = [value];
+
 					type = "array";
 				}
+
 				collector.add({
 					kind: this.getSuggestionKind(type),
 					label: this.getLabelForValue(value),
@@ -1034,9 +1104,11 @@ export class JSONCompletion {
 					),
 					insertTextFormat: InsertTextFormat.Snippet,
 				});
+
 				hasProposals = true;
 			});
 		}
+
 		if (Array.isArray(schema.defaultSnippets)) {
 			schema.defaultSnippets.forEach((s) => {
 				let type = schema.type;
@@ -1054,13 +1126,17 @@ export class JSONCompletion {
 
 					for (let i = arrayDepth; i > 0; i--) {
 						value = [value];
+
 						type = "array";
 					}
+
 					insertText = this.getInsertTextForSnippetValue(
 						value,
 						separatorAfter,
 					);
+
 					filterText = this.getFilterTextForSnippetValue(value);
+
 					label = label || this.getLabelForSnippetValue(value);
 				} else if (typeof s.bodyText === "string") {
 					let prefix = "",
@@ -1069,10 +1145,14 @@ export class JSONCompletion {
 
 					for (let i = arrayDepth; i > 0; i--) {
 						prefix = prefix + indent + "[\n";
+
 						suffix = suffix + "\n" + indent + "]";
+
 						indent += "\t";
+
 						type = "array";
 					}
+
 					insertText =
 						prefix +
 						indent +
@@ -1084,6 +1164,7 @@ export class JSONCompletion {
 				} else {
 					return;
 				}
+
 				collector.add({
 					kind: this.getSuggestionKind(type),
 					label,
@@ -1093,9 +1174,11 @@ export class JSONCompletion {
 					insertTextFormat: InsertTextFormat.Snippet,
 					filterText,
 				});
+
 				hasProposals = true;
 			});
 		}
+
 		if (
 			!hasProposals &&
 			typeof schema.items === "object" &&
@@ -1153,6 +1236,7 @@ export class JSONCompletion {
 				) {
 					documentation = schema.enumDescriptions[i];
 				}
+
 				collector.add({
 					kind: this.getSuggestionKind(schema.type),
 					label: this.getLabelForValue(enm),
@@ -1171,6 +1255,7 @@ export class JSONCompletion {
 		if (Array.isArray(schema.enum) || isDefined(schema.const)) {
 			return;
 		}
+
 		const type = schema.type;
 
 		if (Array.isArray(type)) {
@@ -1198,6 +1283,7 @@ export class JSONCompletion {
 				documentation: "",
 			});
 		}
+
 		if (types["array"]) {
 			collector.add({
 				kind: this.getSuggestionKind("array"),
@@ -1247,10 +1333,12 @@ export class JSONCompletion {
 		const schemaIds = this.schemaService.getRegisteredSchemaIds(
 			(schema) => schema === "http" || schema === "https",
 		);
+
 		schemaIds.forEach((schemaId) => {
 			if (schemaId.startsWith("http://json-schema.org/draft-")) {
 				schemaId = schemaId + "#";
 			}
+
 			collector.add({
 				kind: CompletionItemKind.Module,
 				label: this.getLabelForValue(schemaId),
@@ -1299,6 +1387,7 @@ export class JSONCompletion {
 		} else if (text === "[]") {
 			return "[$1]" + separatorAfter;
 		}
+
 		return this.getInsertTextForPlainText(text + separatorAfter);
 	}
 
@@ -1312,6 +1401,7 @@ export class JSONCompletion {
 					return value.substr(1);
 				}
 			}
+
 			return JSON.stringify(value);
 		};
 
@@ -1327,29 +1417,36 @@ export class JSONCompletion {
 				if (value === null) {
 					return "${1:null}" + separatorAfter;
 				}
+
 				return this.getInsertTextForValue(value, separatorAfter);
 
 			case "string":
 				let snippetValue = JSON.stringify(value);
+
 				snippetValue = snippetValue.substr(1, snippetValue.length - 2); // remove quotes
 				snippetValue = this.getInsertTextForPlainText(snippetValue); // escape \ and }
+
 				return '"${1:' + snippetValue + '}"' + separatorAfter;
 
 			case "number":
 			case "boolean":
 				return "${1:" + JSON.stringify(value) + "}" + separatorAfter;
 		}
+
 		return this.getInsertTextForValue(value, separatorAfter);
 	}
 
 	private getSuggestionKind(type: any): CompletionItemKind {
 		if (Array.isArray(type)) {
 			const array = <any[]>type;
+
 			type = array.length > 0 ? array[0] : undefined;
 		}
+
 		if (!type) {
 			return CompletionItemKind.Value;
 		}
+
 		switch (type) {
 			case "string":
 				return CompletionItemKind.Value;
@@ -1417,6 +1514,7 @@ export class JSONCompletion {
 		if (!addValue) {
 			return propertyText;
 		}
+
 		const resultText = propertyText + ": ";
 
 		let value;
@@ -1432,8 +1530,10 @@ export class JSONCompletion {
 						value = this.getInsertTextForSnippetValue(body, "");
 					}
 				}
+
 				nValueProposals += propertySchema.defaultSnippets.length;
 			}
+
 			if (propertySchema.enum) {
 				if (!value && propertySchema.enum.length === 1) {
 					value = this.getInsertTextForGuessedValue(
@@ -1441,8 +1541,10 @@ export class JSONCompletion {
 						"",
 					);
 				}
+
 				nValueProposals += propertySchema.enum.length;
 			}
+
 			if (isDefined(propertySchema.const)) {
 				if (!value) {
 					value = this.getInsertTextForGuessedValue(
@@ -1450,8 +1552,10 @@ export class JSONCompletion {
 						"",
 					);
 				}
+
 				nValueProposals++;
 			}
+
 			if (isDefined(propertySchema.default)) {
 				if (!value) {
 					value = this.getInsertTextForGuessedValue(
@@ -1459,8 +1563,10 @@ export class JSONCompletion {
 						"",
 					);
 				}
+
 				nValueProposals++;
 			}
+
 			if (
 				Array.isArray(propertySchema.examples) &&
 				propertySchema.examples.length
@@ -1471,8 +1577,10 @@ export class JSONCompletion {
 						"",
 					);
 				}
+
 				nValueProposals += propertySchema.examples.length;
 			}
+
 			if (nValueProposals === 0) {
 				let type = Array.isArray(propertySchema.type)
 					? propertySchema.type[0]
@@ -1485,6 +1593,7 @@ export class JSONCompletion {
 						type = "array";
 					}
 				}
+
 				switch (type) {
 					case "boolean":
 						value = "$1";
@@ -1522,9 +1631,11 @@ export class JSONCompletion {
 				}
 			}
 		}
+
 		if (!value || nValueProposals > 1) {
 			value = "$1";
 		}
+
 		return resultText + value + separatorAfter;
 	}
 
@@ -1536,11 +1647,13 @@ export class JSONCompletion {
 		while (i >= 0 && ' \t\n\r\v":{[,]}'.indexOf(text.charAt(i)) === -1) {
 			i--;
 		}
+
 		return text.substring(i + 1, offset);
 	}
 
 	private evaluateSeparatorAfter(document: TextDocument, offset: number) {
 		const scanner = Json.createScanner(document.getText(), true);
+
 		scanner.setPosition(offset);
 
 		const token = scanner.scan();
@@ -1581,16 +1694,19 @@ export class JSONCompletion {
 				) {
 					return i + 1;
 				}
+
 				return i;
 			} else if (offset >= child.offset) {
 				return i;
 			}
 		}
+
 		return 0;
 	}
 
 	private isInComment(document: TextDocument, start: number, offset: number) {
 		const scanner = Json.createScanner(document.getText(), false);
+
 		scanner.setPosition(start);
 
 		let token = scanner.scan();
@@ -1601,6 +1717,7 @@ export class JSONCompletion {
 		) {
 			token = scanner.scan();
 		}
+
 		return (
 			(token === Json.SyntaxKind.LineCommentTrivia ||
 				token === Json.SyntaxKind.BlockCommentTrivia) &&
@@ -1617,6 +1734,7 @@ export class JSONCompletion {
 				value: markupString,
 			};
 		}
+
 		return undefined;
 	}
 
@@ -1625,10 +1743,12 @@ export class JSONCompletion {
 			const documentationFormat =
 				this.clientCapabilities.textDocument?.completion?.completionItem
 					?.documentationFormat;
+
 			this.supportsMarkdown =
 				Array.isArray(documentationFormat) &&
 				documentationFormat.indexOf(MarkupKind.Markdown) !== -1;
 		}
+
 		return this.supportsMarkdown;
 	}
 
@@ -1637,13 +1757,16 @@ export class JSONCompletion {
 			this.labelDetailsSupport =
 				this.clientCapabilities.textDocument?.completion?.completionItem?.commitCharactersSupport;
 		}
+
 		return this.supportsCommitCharacters;
 	}
+
 	private doesSupportsLabelDetails() {
 		if (!isDefined(this.labelDetailsSupport)) {
 			this.labelDetailsSupport =
 				this.clientCapabilities.textDocument?.completion?.completionItem?.labelDetailsSupport;
 		}
+
 		return this.labelDetailsSupport;
 	}
 }

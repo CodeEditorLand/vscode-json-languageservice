@@ -19,15 +19,19 @@ export function hexDigit(charCode: number) {
 	if (charCode < Digit0) {
 		return 0;
 	}
+
 	if (charCode <= Digit9) {
 		return charCode - Digit0;
 	}
+
 	if (charCode < a) {
 		charCode += a - A;
 	}
+
 	if (charCode >= a && charCode <= f) {
 		return charCode - a + 10;
 	}
+
 	return 0;
 }
 
@@ -35,6 +39,7 @@ export function colorFromHex(text: string): Color | undefined {
 	if (text[0] !== "#") {
 		return undefined;
 	}
+
 	switch (text.length) {
 		case 4:
 			return {
@@ -89,6 +94,7 @@ export function colorFromHex(text: string): Color | undefined {
 					255.0,
 			};
 	}
+
 	return undefined;
 }
 

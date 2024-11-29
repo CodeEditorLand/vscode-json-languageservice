@@ -18,8 +18,10 @@ export function format(
 		const offset = documentToFormat.offsetAt(formattingRange.start);
 
 		const length = documentToFormat.offsetAt(formattingRange.end) - offset;
+
 		range = { offset, length };
 	}
+
 	const options = {
 		tabSize: formattingOptions ? formattingOptions.tabSize : 4,
 		insertSpaces: formattingOptions?.insertSpaces === true,

@@ -574,6 +574,7 @@ for (const schemaName in schemaContributions.schemas) {
 		if (typeof propertyObject === "boolean") {
 			propertyObject = schema.properties[property] = {};
 		}
+
 		const description = descriptions[property];
 
 		if (description) {

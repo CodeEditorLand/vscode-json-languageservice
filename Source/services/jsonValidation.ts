@@ -24,9 +24,11 @@ import { JSONSchemaService, ResolvedSchema } from "./jsonSchemaService";
 
 export class JSONValidation {
 	private jsonSchemaService: JSONSchemaService;
+
 	private promise: PromiseConstructor;
 
 	private validationEnabled: boolean | undefined;
+
 	private commentSeverity: DiagnosticSeverity | undefined;
 
 	public constructor(
@@ -34,13 +36,16 @@ export class JSONValidation {
 		promiseConstructor: PromiseConstructor,
 	) {
 		this.jsonSchemaService = jsonSchemaService;
+
 		this.promise = promiseConstructor;
+
 		this.validationEnabled = true;
 	}
 
 	public configure(raw: LanguageSettings) {
 		if (raw) {
 			this.validationEnabled = raw.validate !== false;
+
 			this.commentSeverity = raw.allowComments
 				? undefined
 				: DiagnosticSeverity.Error;
@@ -56,6 +61,7 @@ export class JSONValidation {
 		if (!this.validationEnabled) {
 			return this.promise.resolve([]);
 		}
+
 		const diagnostics: Diagnostic[] = [];
 
 		const added: { [signature: string]: boolean } = {};
@@ -71,6 +77,7 @@ export class JSONValidation {
 
 			if (!added[signature]) {
 				added[signature] = true;
+
 				diagnostics.push(problem);
 			}
 		};
@@ -114,6 +121,7 @@ export class JSONValidation {
 									node.offset + node.length,
 								),
 							);
+
 							addProblem(
 								Diagnostic.create(
 									range,
@@ -127,6 +135,7 @@ export class JSONValidation {
 								textDocument.positionAt(astRoot.offset),
 								textDocument.positionAt(astRoot.offset + 1),
 							);
+
 							addProblem(
 								Diagnostic.create(
 									range,
@@ -151,6 +160,7 @@ export class JSONValidation {
 							ErrorCode.SchemaUnsupportedFeature,
 						);
 					}
+
 					const semanticErrors = jsonDocument.validate(
 						textDocument,
 						schema.schema,
@@ -162,6 +172,7 @@ export class JSONValidation {
 						semanticErrors.forEach(addProblem);
 					}
 				}
+
 				if (schemaAllowsComments(schema.schema)) {
 					commentSeverity = undefined;
 				}
@@ -176,13 +187,16 @@ export class JSONValidation {
 					if (typeof trailingCommaSeverity !== "number") {
 						continue;
 					}
+
 					p.severity = trailingCommaSeverity;
 				}
+
 				addProblem(p);
 			}
 
 			if (typeof commentSeverity === "number") {
 				const message = l10n.t("Comments are not permitted in JSON.");
+
 				jsonDocument.comments.forEach((c) => {
 					addProblem(
 						Diagnostic.create(
@@ -194,6 +208,7 @@ export class JSONValidation {
 					);
 				});
 			}
+
 			return diagnostics;
 		};
 
@@ -209,6 +224,7 @@ export class JSONValidation {
 				return getDiagnostics(resolvedSchema);
 			});
 		}
+
 		return this.jsonSchemaService
 			.getSchemaForResource(textDocument.uri, jsonDocument)
 			.then((schema) => {
@@ -236,6 +252,7 @@ function schemaAllowsComments(schemaRef: JSONSchemaRef): boolean | undefined {
 		if (isBoolean(schemaRef.allowComments)) {
 			return schemaRef.allowComments;
 		}
+
 		if (schemaRef.allOf) {
 			for (const schema of schemaRef.allOf) {
 				const allow = schemaAllowsComments(schema);
@@ -246,6 +263,7 @@ function schemaAllowsComments(schemaRef: JSONSchemaRef): boolean | undefined {
 			}
 		}
 	}
+
 	return undefined;
 }
 
@@ -256,12 +274,14 @@ function schemaAllowsTrailingCommas(
 		if (isBoolean(schemaRef.allowTrailingCommas)) {
 			return schemaRef.allowTrailingCommas;
 		}
+
 		const deprSchemaRef = schemaRef as any;
 
 		if (isBoolean(deprSchemaRef["allowsTrailingCommas"])) {
 			// deprecated
 			return deprSchemaRef["allowsTrailingCommas"];
 		}
+
 		if (schemaRef.allOf) {
 			for (const schema of schemaRef.allOf) {
 				const allow = schemaAllowsTrailingCommas(schema);
@@ -272,6 +292,7 @@ function schemaAllowsTrailingCommas(
 			}
 		}
 	}
+
 	return undefined;
 }
 
@@ -288,5 +309,6 @@ function toDiagnosticSeverity(
 		case "ignore":
 			return undefined;
 	}
+
 	return undefined;
 }

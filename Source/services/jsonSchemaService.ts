@@ -53,12 +53,15 @@ export interface IJSONSchemaService {
 
 export interface SchemaAssociation {
 	pattern: string[];
+
 	uris: string[];
+
 	folderUri?: string;
 }
 
 export interface ISchemaContributions {
 	schemas?: { [id: string]: JSONSchema };
+
 	schemaAssociations?: SchemaAssociation[];
 }
 
@@ -85,6 +88,7 @@ const PATH_SEP = "/";
 
 interface IGlobWrapper {
 	regexp: RegExp;
+
 	include: boolean;
 }
 
@@ -105,10 +109,12 @@ class FilePatternAssociation {
 				if (!include) {
 					patternString = patternString.substring(1);
 				}
+
 				if (patternString.length > 0) {
 					if (patternString[0] === PATH_SEP) {
 						patternString = patternString.substring(1);
 					}
+
 					this.globWrappers.push({
 						regexp: createRegex("**/" + patternString, {
 							extended: true,
@@ -118,16 +124,19 @@ class FilePatternAssociation {
 					});
 				}
 			}
+
 			if (folderUri) {
 				folderUri = normalizeResourceForMatching(folderUri);
 
 				if (!folderUri.endsWith("/")) {
 					folderUri = folderUri + "/";
 				}
+
 				this.folderUri = folderUri;
 			}
 		} catch (e) {
 			this.globWrappers.length = 0;
+
 			this.uris = [];
 		}
 	}
@@ -136,6 +145,7 @@ class FilePatternAssociation {
 		if (this.folderUri && !fileName.startsWith(this.folderUri)) {
 			return false;
 		}
+
 		let match = false;
 
 		for (const { regexp, include } of this.globWrappers) {
@@ -143,6 +153,7 @@ class FilePatternAssociation {
 				match = include;
 			}
 		}
+
 		return match;
 	}
 
@@ -155,10 +166,15 @@ type SchemaDependencies = Set<string>;
 
 class SchemaHandle implements ISchemaHandle {
 	public readonly uri: string;
+
 	public readonly dependencies: SchemaDependencies;
+
 	public anchors: Map<string, JSONSchema> | undefined;
+
 	private resolvedSchema: PromiseLike<ResolvedSchema> | undefined;
+
 	private unresolvedSchema: PromiseLike<UnresolvedSchema> | undefined;
+
 	private readonly service: JSONSchemaService;
 
 	constructor(
@@ -167,8 +183,11 @@ class SchemaHandle implements ISchemaHandle {
 		unresolvedSchemaContent?: JSONSchema,
 	) {
 		this.service = service;
+
 		this.uri = uri;
+
 		this.dependencies = new Set();
+
 		this.anchors = undefined;
 
 		if (unresolvedSchemaContent) {
@@ -182,6 +201,7 @@ class SchemaHandle implements ISchemaHandle {
 		if (!this.unresolvedSchema) {
 			this.unresolvedSchema = this.service.loadSchema(this.uri);
 		}
+
 		return this.unresolvedSchema;
 	}
 
@@ -193,14 +213,19 @@ class SchemaHandle implements ISchemaHandle {
 				},
 			);
 		}
+
 		return this.resolvedSchema;
 	}
 
 	public clearSchema(): boolean {
 		const hasChanges = !!this.unresolvedSchema;
+
 		this.resolvedSchema = undefined;
+
 		this.unresolvedSchema = undefined;
+
 		this.dependencies.clear();
+
 		this.anchors = undefined;
 
 		return hasChanges;
@@ -209,18 +234,23 @@ class SchemaHandle implements ISchemaHandle {
 
 export class UnresolvedSchema {
 	public schema: JSONSchema;
+
 	public errors: string[];
 
 	constructor(schema: JSONSchema, errors: string[] = []) {
 		this.schema = schema;
+
 		this.errors = errors;
 	}
 }
 
 export class ResolvedSchema {
 	public readonly schema: JSONSchema;
+
 	public readonly errors: string[];
+
 	public readonly warnings: string[];
+
 	public readonly schemaDraft: string | undefined;
 
 	constructor(
@@ -230,8 +260,11 @@ export class ResolvedSchema {
 		schemaDraft: string | undefined,
 	) {
 		this.schema = schema;
+
 		this.errors = errors;
+
 		this.warnings = warnings;
+
 		this.schemaDraft = schemaDraft;
 	}
 
@@ -241,6 +274,7 @@ export class ResolvedSchema {
 		if (schemaRef) {
 			return Parser.asSchema(schemaRef);
 		}
+
 		return undefined;
 	}
 
@@ -251,6 +285,7 @@ export class ResolvedSchema {
 		if (!schema || typeof schema === "boolean" || path.length === 0) {
 			return schema;
 		}
+
 		const next = path.shift()!;
 
 		if (schema.properties && typeof schema.properties[next]) {
@@ -286,20 +321,27 @@ export class ResolvedSchema {
 
 export class JSONSchemaService implements IJSONSchemaService {
 	private contributionSchemas: { [id: string]: SchemaHandle };
+
 	private contributionAssociations: FilePatternAssociation[];
 
 	private schemasById: { [id: string]: SchemaHandle };
+
 	private filePatternAssociations: FilePatternAssociation[];
+
 	private registeredSchemasIds: { [id: string]: boolean };
 
 	private contextService: WorkspaceContextService | undefined;
+
 	private callOnDispose: Function[];
+
 	private requestService: SchemaRequestService | undefined;
+
 	private promiseConstructor: PromiseConstructor;
 
 	private cachedSchemaForResource:
 		| {
 				resource: string;
+
 				resolvedSchema: PromiseLike<ResolvedSchema | undefined>;
 		  }
 		| undefined;
@@ -310,14 +352,21 @@ export class JSONSchemaService implements IJSONSchemaService {
 		promiseConstructor?: PromiseConstructor,
 	) {
 		this.contextService = contextService;
+
 		this.requestService = requestService;
+
 		this.promiseConstructor = promiseConstructor || Promise;
+
 		this.callOnDispose = [];
 
 		this.contributionSchemas = {};
+
 		this.contributionAssociations = [];
+
 		this.schemasById = {};
+
 		this.filePatternAssociations = [];
+
 		this.registeredSchemasIds = {};
 	}
 
@@ -346,6 +395,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 		this.cachedSchemaForResource = undefined;
 
 		let hasChanges = false;
+
 		uri = normalizeId(uri);
 
 		const toWalk = [uri];
@@ -367,13 +417,16 @@ export class JSONSchemaService implements IJSONSchemaService {
 					if (handle.uri !== curr) {
 						toWalk.push(handle.uri);
 					}
+
 					if (handle.clearSchema()) {
 						hasChanges = true;
 					}
+
 					all[i] = undefined;
 				}
 			}
 		}
+
 		return hasChanges;
 	}
 
@@ -385,12 +438,14 @@ export class JSONSchemaService implements IJSONSchemaService {
 
 			for (const id in schemas) {
 				const normalizedId = normalizeId(id);
+
 				this.contributionSchemas[normalizedId] = this.addSchemaHandle(
 					normalizedId,
 					schemas[id],
 				);
 			}
 		}
+
 		if (Array.isArray(schemaContributions.schemaAssociations)) {
 			const schemaAssociations = schemaContributions.schemaAssociations;
 
@@ -402,6 +457,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 					schemaAssociation.folderUri,
 					uris,
 				);
+
 				this.contributionAssociations.push(association);
 			}
 		}
@@ -416,6 +472,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 			id,
 			unresolvedSchemaContent,
 		);
+
 		this.schemasById[id] = schemaHandle;
 
 		return schemaHandle;
@@ -437,6 +494,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 		uris: string[],
 	): FilePatternAssociation {
 		const fpa = new FilePatternAssociation(pattern, folderUri, uris);
+
 		this.filePatternAssociations.push(fpa);
 
 		return fpa;
@@ -444,7 +502,9 @@ export class JSONSchemaService implements IJSONSchemaService {
 
 	public registerExternalSchema(config: SchemaConfiguration): ISchemaHandle {
 		const id = normalizeId(config.uri);
+
 		this.registeredSchemasIds[id] = true;
+
 		this.cachedSchemaForResource = undefined;
 
 		if (config.fileMatch && config.fileMatch.length) {
@@ -452,6 +512,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 				id,
 			]);
 		}
+
 		return config.schema
 			? this.addSchemaHandle(id, config.schema)
 			: this.getOrAddSchemaHandle(id);
@@ -459,14 +520,19 @@ export class JSONSchemaService implements IJSONSchemaService {
 
 	public clearExternalSchemas(): void {
 		this.schemasById = {};
+
 		this.filePatternAssociations = [];
+
 		this.registeredSchemasIds = {};
+
 		this.cachedSchemaForResource = undefined;
 
 		for (const id in this.contributionSchemas) {
 			this.schemasById[id] = this.contributionSchemas[id];
+
 			this.registeredSchemasIds[id] = true;
 		}
+
 		for (const contributionAssociation of this.contributionAssociations) {
 			this.filePatternAssociations.push(contributionAssociation);
 		}
@@ -482,6 +548,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 		if (schemaHandle) {
 			return schemaHandle.getResolvedSchema();
 		}
+
 		return this.promise.resolve(undefined);
 	}
 
@@ -496,9 +563,11 @@ export class JSONSchemaService implements IJSONSchemaService {
 				new UnresolvedSchema(<JSONSchema>{}, [errorMessage]),
 			);
 		}
+
 		if (url.startsWith("http://json-schema.org/")) {
 			url = "https" + url.substring(4); // always access json-schema.org with https. See https://github.com/microsoft/vscode/issues/195189
 		}
+
 		return this.requestService(url).then(
 			(content) => {
 				if (!content) {
@@ -509,6 +578,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 
 					return new UnresolvedSchema(<JSONSchema>{}, [errorMessage]);
 				}
+
 				const errors = [];
 
 				if (content.charCodeAt(0) === 65279) {
@@ -518,12 +588,14 @@ export class JSONSchemaService implements IJSONSchemaService {
 							toDisplayString(url),
 						),
 					);
+
 					content = content.trimStart();
 				}
 
 				let schemaContent: JSONSchema = {};
 
 				const jsonErrors: Json.ParseError[] = [];
+
 				schemaContent = Json.parse(content, jsonErrors);
 
 				if (jsonErrors.length) {
@@ -535,6 +607,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 						),
 					);
 				}
+
 				return new UnresolvedSchema(schemaContent, errors);
 			},
 			(error: any) => {
@@ -546,12 +619,14 @@ export class JSONSchemaService implements IJSONSchemaService {
 					// more concise error message, URL and context are attached by caller anyways
 					errorMessage = errorSplit[1];
 				}
+
 				if (Strings.endsWith(errorMessage, ".")) {
 					errorMessage = errorMessage.substr(
 						0,
 						errorMessage.length - 1,
 					);
 				}
+
 				return new UnresolvedSchema(<JSONSchema>{}, [
 					l10n.t(
 						"Unable to load schema from '{0}': {1}.",
@@ -601,8 +676,10 @@ export class JSONSchemaService implements IJSONSchemaService {
 			if (path[0] === "/") {
 				path = path.substring(1);
 			}
+
 			path.split("/").some((part) => {
 				part = part.replace(/~1/g, "/").replace(/~0/g, "~");
+
 				current = current[part];
 
 				return !current;
@@ -619,6 +696,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 			if (!handle.anchors) {
 				handle.anchors = collectAnchors(schema);
 			}
+
 			return handle.anchors.get(id);
 		};
 
@@ -651,6 +729,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 				// A $ref to a sub-schema with an $id (i.e #hello)
 				section = findSchemaById(sourceRoot, sourceHandle, refSegment);
 			}
+
 			if (section) {
 				merge(target, section);
 			} else {
@@ -676,6 +755,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 			) {
 				uri = contextService.resolveRelativePath(uri, parentHandle.uri);
 			}
+
 			uri = normalizeId(uri);
 
 			const referencedHandle = this.getOrAddSchemaHandle(uri);
@@ -687,6 +767,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 
 					if (unresolvedSchema.errors.length) {
 						const loc = refSegment ? uri + "#" + refSegment : uri;
+
 						resolveErrors.push(
 							l10n.t(
 								"Problems loading reference '{0}': {1}",
@@ -695,6 +776,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 							),
 						);
 					}
+
 					mergeRef(
 						node,
 						unresolvedSchema.schema,
@@ -724,6 +806,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 					const ref = next.$ref;
 
 					const segments = ref.split("#", 2);
+
 					delete next.$ref;
 
 					if (segments[0].length > 0) {
@@ -742,14 +825,18 @@ export class JSONSchemaService implements IJSONSchemaService {
 						// This is a reference inside the current schema
 						if (!seenRefs.has(ref)) {
 							const id = segments[1];
+
 							mergeRef(next, parentSchema, parentHandle, id);
+
 							seenRefs.add(ref);
 						}
 					}
 				}
+
 				if (next.$recursiveRef) {
 					usesUnsupportedFeatures.add("$recursiveRef");
 				}
+
 				if (next.$dynamicRef) {
 					usesUnsupportedFeatures.add("$dynamicRef");
 				}
@@ -760,6 +847,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 
 		const collectAnchors = (root: JSONSchema): Map<string, JSONSchema> => {
 			const result = new Map<string, JSONSchema>();
+
 			this.traverseNodes(root, (next) => {
 				const id = next.$id || next.id;
 
@@ -780,9 +868,11 @@ export class JSONSchemaService implements IJSONSchemaService {
 						result.set(anchor, next);
 					}
 				}
+
 				if (next.$recursiveAnchor) {
 					usesUnsupportedFeatures.add("$recursiveAnchor");
 				}
+
 				if (next.$dynamicAnchor) {
 					usesUnsupportedFeatures.add("$dynamicAnchor");
 				}
@@ -802,6 +892,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 					),
 				);
 			}
+
 			return new ResolvedSchema(
 				schema,
 				resolveErrors,
@@ -818,6 +909,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 		if (!root || typeof root !== "object") {
 			return Promise.resolve(null);
 		}
+
 		const seen = new Set<JSONSchema>();
 
 		const collectEntries = (...entries: (JSONSchemaRef | undefined)[]) => {
@@ -879,7 +971,9 @@ export class JSONSchemaService implements IJSONSchemaService {
 		while (next) {
 			if (!seen.has(next)) {
 				seen.add(next);
+
 				handle(next);
+
 				collectEntries(
 					next.additionalItems,
 					next.additionalProperties,
@@ -892,6 +986,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 					next.unevaluatedItems,
 					next.unevaluatedProperties,
 				);
+
 				collectMapEntries(
 					next.definitions,
 					next.$defs,
@@ -900,14 +995,17 @@ export class JSONSchemaService implements IJSONSchemaService {
 					<JSONSchemaMap>next.dependencies,
 					next.dependentSchemas,
 				);
+
 				collectArrayEntries(
 					next.anyOf,
 					next.allOf,
 					next.oneOf,
 					next.prefixItems,
 				);
+
 				collectEntryOrArrayEntries(next.items);
 			}
+
 			next = toWalk.pop();
 		}
 	}
@@ -934,10 +1032,12 @@ export class JSONSchemaService implements IJSONSchemaService {
 							resource,
 						);
 					}
+
 					return schemaId;
 				}
 			}
 		}
+
 		return undefined;
 	}
 
@@ -953,11 +1053,13 @@ export class JSONSchemaService implements IJSONSchemaService {
 				for (const schemaId of entry.getURIs()) {
 					if (!seen[schemaId]) {
 						schemas.push(schemaId);
+
 						seen[schemaId] = true;
 					}
 				}
 			}
 		}
+
 		return schemas;
 	}
 
@@ -971,6 +1073,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 		if (schemeId) {
 			return [schemeId];
 		}
+
 		return this.getAssociatedSchemas(resource);
 	}
 
@@ -988,12 +1091,14 @@ export class JSONSchemaService implements IJSONSchemaService {
 				return this.getOrAddSchemaHandle(id).getResolvedSchema();
 			}
 		}
+
 		if (
 			this.cachedSchemaForResource &&
 			this.cachedSchemaForResource.resource === resource
 		) {
 			return this.cachedSchemaForResource.resolvedSchema;
 		}
+
 		const schemas = this.getAssociatedSchemas(resource);
 
 		const resolvedSchema =
@@ -1003,6 +1108,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 						schemas,
 					).getResolvedSchema()
 				: this.promise.resolve(undefined);
+
 		this.cachedSchemaForResource = { resource, resolvedSchema };
 
 		return resolvedSchema;
@@ -1045,6 +1151,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 					.filter((s) => !s.inverted);
 			});
 		}
+
 		return this.getSchemaForResource(document.uri, jsonDocument).then(
 			(schema) => {
 				if (schema) {
@@ -1052,6 +1159,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 						.getMatchingSchemas(schema.schema)
 						.filter((s) => !s.inverted);
 				}
+
 				return [];
 			},
 		);
@@ -1090,5 +1198,6 @@ function toDisplayString(url: string) {
 	} catch (e) {
 		// ignore
 	}
+
 	return url;
 }

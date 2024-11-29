@@ -45,9 +45,12 @@ export function repeat(value: string, count: number) {
 		if ((count & 1) === 1) {
 			s += value;
 		}
+
 		value += value;
+
 		count = count >>> 1;
 	}
+
 	return s;
 }
 
@@ -56,8 +59,10 @@ export function extendedRegExp(pattern: string): RegExp | undefined {
 
 	if (startsWith(pattern, "(?i)")) {
 		pattern = pattern.substring(4);
+
 		flags = "i";
 	}
+
 	try {
 		return new RegExp(pattern, flags + "u");
 	} catch (e) {
@@ -86,5 +91,6 @@ export function stringLength(str: string) {
 			i++;
 		}
 	}
+
 	return count;
 }

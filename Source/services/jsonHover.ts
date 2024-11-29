@@ -17,7 +17,9 @@ import * as SchemaService from "./jsonSchemaService";
 
 export class JSONHover {
 	private schemaService: SchemaService.IJSONSchemaService;
+
 	private contributions: JSONWorkerContribution[];
+
 	private promise: PromiseConstructor;
 
 	constructor(
@@ -26,7 +28,9 @@ export class JSONHover {
 		promiseConstructor: PromiseConstructor,
 	) {
 		this.schemaService = schemaService;
+
 		this.contributions = contributions;
+
 		this.promise = promiseConstructor || Promise;
 	}
 
@@ -47,6 +51,7 @@ export class JSONHover {
 		) {
 			return this.promise.resolve(null);
 		}
+
 		const hoverRangeNode = node;
 
 		// use the property description when hovering over an object key
@@ -111,9 +116,11 @@ export class JSONHover {
 					let markdownEnumValueDescription: string | undefined =
 							undefined,
 						enumValue: string | undefined = undefined;
+
 					matchingSchemas.every((s) => {
 						if (s.node === node && !s.inverted && s.schema) {
 							title = title || s.schema.title;
+
 							markdownDescription =
 								markdownDescription ||
 								s.schema.markdownDescription ||
@@ -132,6 +139,7 @@ export class JSONHover {
 										s.schema.enumDescriptions[idx],
 									);
 								}
+
 								if (markdownEnumValueDescription) {
 									enumValue = s.schema.enum[idx];
 
@@ -141,6 +149,7 @@ export class JSONHover {
 								}
 							}
 						}
+
 						return true;
 					});
 
@@ -149,20 +158,26 @@ export class JSONHover {
 					if (title) {
 						result = toMarkdown(title);
 					}
+
 					if (markdownDescription) {
 						if (result.length > 0) {
 							result += "\n\n";
 						}
+
 						result += markdownDescription;
 					}
+
 					if (markdownEnumValueDescription) {
 						if (result.length > 0) {
 							result += "\n\n";
 						}
+
 						result += `\`${toMarkdownCodeBlock(enumValue!)}\`: ${markdownEnumValueDescription}`;
 					}
+
 					return createHover([result]);
 				}
+
 				return null;
 			});
 	}
@@ -174,6 +189,7 @@ function toMarkdown(plain: string | undefined): string | undefined {
 		const res = plain.replace(/([^\n\r])(\r?\n)([^\n\r])/gm, "$1\n\n$3"); // single new lines to \n\n (Markdown paragraph)
 		return res.replace(/[\\`*_{}[\]()#+\-.!]/g, "\\$&"); // escape markdown syntax tokens: http://daringfireball.net/projects/markdown/syntax#backslash
 	}
+
 	return undefined;
 }
 
@@ -182,5 +198,6 @@ function toMarkdownCodeBlock(content: string) {
 	if (content.indexOf("`") !== -1) {
 		return "`` " + content + " ``";
 	}
+
 	return content;
 }

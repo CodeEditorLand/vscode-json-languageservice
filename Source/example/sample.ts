@@ -35,6 +35,7 @@ async function main() {
 			if (uri === jsonSchemaUri) {
 				return Promise.resolve(JSON.stringify(jsonSchema));
 			}
+
 			return Promise.reject(`Unabled to load schema at ${uri}`);
 		},
 	});
@@ -50,6 +51,7 @@ async function main() {
 		textDocument,
 		jsonDocument,
 	);
+
 	console.log(
 		"Validation results:",
 		diagnostics.map((d) => `[line ${d.range.start.line}] ${d.message}`),
@@ -67,6 +69,7 @@ async function main() {
 		{ line: 2, character: 18 },
 		jsonDocument,
 	);
+
 	console.log(
 		"Completion proposals:",
 		competionResult?.items.map((i) => `${i.label}`),

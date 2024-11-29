@@ -15,6 +15,7 @@ export function stringifyObject(
 			if (obj.length === 0) {
 				return "[]";
 			}
+
 			let result = "[\n";
 
 			for (let i = 0; i < obj.length; i++) {
@@ -25,8 +26,10 @@ export function stringifyObject(
 				if (i < obj.length - 1) {
 					result += ",";
 				}
+
 				result += "\n";
 			}
+
 			result += indent + "]";
 
 			return result;
@@ -36,6 +39,7 @@ export function stringifyObject(
 			if (keys.length === 0) {
 				return "{}";
 			}
+
 			let result = "{\n";
 
 			for (let i = 0; i < keys.length; i++) {
@@ -50,12 +54,15 @@ export function stringifyObject(
 				if (i < keys.length - 1) {
 					result += ",";
 				}
+
 				result += "\n";
 			}
+
 			result += indent + "}";
 
 			return result;
 		}
 	}
+
 	return stringifyLiteral(obj);
 }

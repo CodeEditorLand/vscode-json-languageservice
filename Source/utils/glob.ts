@@ -77,6 +77,7 @@ export function createRegex(
 			case "{":
 				if (extended) {
 					inGroup = true;
+
 					reStr += "(";
 
 					break;
@@ -85,6 +86,7 @@ export function createRegex(
 			case "}":
 				if (extended) {
 					inGroup = false;
+
 					reStr += ")";
 
 					break;
@@ -96,6 +98,7 @@ export function createRegex(
 
 					break;
 				}
+
 				reStr += "\\" + c;
 
 				break;
@@ -109,8 +112,10 @@ export function createRegex(
 
 				while (str[i + 1] === "*") {
 					starCount++;
+
 					i++;
 				}
+
 				const nextChar = str[i + 1];
 
 				if (!globstar) {
@@ -143,6 +148,7 @@ export function createRegex(
 						reStr += "([^/]*)";
 					}
 				}
+
 				break;
 
 			default:

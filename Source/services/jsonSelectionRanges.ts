@@ -37,6 +37,7 @@ export function getSelectionRanges(
 					if (cStart < cEnd && offset >= cStart && offset <= cEnd) {
 						result.push(newRange(cStart, cEnd));
 					}
+
 					result.push(
 						newRange(node.offset, node.offset + node.length),
 					);
@@ -53,6 +54,7 @@ export function getSelectionRanges(
 
 					break;
 			}
+
 			if (
 				node.type === "property" ||
 				(node.parent && node.parent.type === "array")
@@ -66,16 +68,20 @@ export function getSelectionRanges(
 					result.push(newRange(node.offset, afterCommaOffset));
 				}
 			}
+
 			node = node.parent;
 		}
+
 		let current: SelectionRange | undefined = undefined;
 
 		for (let index = result.length - 1; index >= 0; index--) {
 			current = SelectionRange.create(result[index], current);
 		}
+
 		if (!current) {
 			current = SelectionRange.create(Range.create(position, position));
 		}
+
 		return current;
 	}
 
@@ -99,6 +105,7 @@ export function getSelectionRanges(
 		if (token === expectedToken) {
 			return scanner.getTokenOffset() + scanner.getTokenLength();
 		}
+
 		return -1;
 	}
 

@@ -36,6 +36,7 @@ import { extendedRegExp, stringLength } from "../utils/strings";
 
 export interface IRange {
 	offset: number;
+
 	length: number;
 }
 
@@ -84,8 +85,11 @@ const formats = {
 
 export interface IProblem {
 	location: IRange;
+
 	severity?: DiagnosticSeverity;
+
 	code?: ErrorCode;
+
 	message: string;
 }
 
@@ -100,7 +104,9 @@ export abstract class ASTNodeImpl {
 		| "string";
 
 	public offset: number;
+
 	public length: number;
+
 	public readonly parent: ASTNode | undefined;
 
 	constructor(
@@ -109,7 +115,9 @@ export abstract class ASTNodeImpl {
 		length: number = 0,
 	) {
 		this.offset = offset;
+
 		this.length = length;
+
 		this.parent = parent;
 	}
 
@@ -133,6 +141,7 @@ export abstract class ASTNodeImpl {
 
 export class NullASTNodeImpl extends ASTNodeImpl implements NullASTNode {
 	public type: "null" = "null";
+
 	public value: null = null;
 
 	constructor(parent: ASTNode | undefined, offset: number) {
@@ -142,6 +151,7 @@ export class NullASTNodeImpl extends ASTNodeImpl implements NullASTNode {
 
 export class BooleanASTNodeImpl extends ASTNodeImpl implements BooleanASTNode {
 	public type: "boolean" = "boolean";
+
 	public value: boolean;
 
 	constructor(
@@ -150,16 +160,19 @@ export class BooleanASTNodeImpl extends ASTNodeImpl implements BooleanASTNode {
 		offset: number,
 	) {
 		super(parent, offset);
+
 		this.value = boolValue;
 	}
 }
 
 export class ArrayASTNodeImpl extends ASTNodeImpl implements ArrayASTNode {
 	public type: "array" = "array";
+
 	public items: ASTNode[];
 
 	constructor(parent: ASTNode | undefined, offset: number) {
 		super(parent, offset);
+
 		this.items = [];
 	}
 
@@ -170,22 +183,28 @@ export class ArrayASTNodeImpl extends ASTNodeImpl implements ArrayASTNode {
 
 export class NumberASTNodeImpl extends ASTNodeImpl implements NumberASTNode {
 	public type: "number" = "number";
+
 	public isInteger: boolean;
+
 	public value: number;
 
 	constructor(parent: ASTNode | undefined, offset: number) {
 		super(parent, offset);
+
 		this.isInteger = true;
+
 		this.value = Number.NaN;
 	}
 }
 
 export class StringASTNodeImpl extends ASTNodeImpl implements StringASTNode {
 	public type: "string" = "string";
+
 	public value: string;
 
 	constructor(parent: ASTNode | undefined, offset: number, length?: number) {
 		super(parent, offset, length);
+
 		this.value = "";
 	}
 }
@@ -195,8 +214,11 @@ export class PropertyASTNodeImpl
 	implements PropertyASTNode
 {
 	public type: "property" = "property";
+
 	public keyNode: StringASTNode;
+
 	public valueNode?: ASTNode;
+
 	public colonOffset: number;
 
 	constructor(
@@ -205,7 +227,9 @@ export class PropertyASTNodeImpl
 		keyNode: StringASTNode,
 	) {
 		super(parent, offset);
+
 		this.colonOffset = -1;
+
 		this.keyNode = keyNode;
 	}
 
@@ -216,6 +240,7 @@ export class PropertyASTNodeImpl
 
 export class ObjectASTNodeImpl extends ASTNodeImpl implements ObjectASTNode {
 	public type: "object" = "object";
+
 	public properties: PropertyASTNode[];
 
 	constructor(parent: ASTNode | undefined, offset: number) {
@@ -240,17 +265,21 @@ export function asSchema(
 	if (isBoolean(schema)) {
 		return schema ? {} : { "not": {} };
 	}
+
 	return schema;
 }
 
 export interface JSONDocumentConfig {
 	collectComments?: boolean;
+
 	schemaDraft?: SchemaDraft;
 }
 
 export interface IApplicableSchema {
 	node: ASTNode;
+
 	inverted?: boolean;
+
 	schema: JSONSchema;
 }
 
@@ -270,9 +299,13 @@ const schemaDraftFromId: { [id: string]: SchemaDraft } = {
 
 export interface ISchemaCollector {
 	schemas: IApplicableSchema[];
+
 	add(schema: IApplicableSchema): void;
+
 	merge(other: ISchemaCollector): void;
+
 	include(node: ASTNode): boolean;
+
 	newSub(): ISchemaCollector;
 }
 
@@ -291,18 +324,22 @@ class SchemaCollector implements ISchemaCollector {
 		private focusOffset = -1,
 		private exclude?: ASTNode,
 	) {}
+
 	add(schema: IApplicableSchema) {
 		this.schemas.push(schema);
 	}
+
 	merge(other: ISchemaCollector) {
 		Array.prototype.push.apply(this.schemas, other.schemas);
 	}
+
 	include(node: ASTNode) {
 		return (
 			(this.focusOffset === -1 || contains(node, this.focusOffset)) &&
 			node !== this.exclude
 		);
 	}
+
 	newSub(): ISchemaCollector {
 		return new SchemaCollector(-1, this.exclude);
 	}
@@ -310,14 +347,19 @@ class SchemaCollector implements ISchemaCollector {
 
 class NoOpSchemaCollector implements ISchemaCollector {
 	private constructor() {}
+
 	get schemas() {
 		return [];
 	}
+
 	add(_schema: IApplicableSchema) {}
+
 	merge(_other: ISchemaCollector) {}
+
 	include(_node: ASTNode) {
 		return true;
 	}
+
 	newSub(): ISchemaCollector {
 		return this;
 	}
@@ -329,19 +371,30 @@ export class ValidationResult {
 	public problems: IProblem[];
 
 	public propertiesMatches: number;
+
 	public processedProperties: Set<string>;
+
 	public propertiesValueMatches: number;
+
 	public primaryValueMatches: number;
+
 	public enumValueMatch: boolean;
+
 	public enumValues: any[] | undefined;
 
 	constructor() {
 		this.problems = [];
+
 		this.propertiesMatches = 0;
+
 		this.processedProperties = new Set();
+
 		this.propertiesValueMatches = 0;
+
 		this.primaryValueMatches = 0;
+
 		this.enumValueMatch = false;
+
 		this.enumValues = undefined;
 	}
 
@@ -351,8 +404,11 @@ export class ValidationResult {
 
 	public merge(validationResult: ValidationResult): void {
 		this.problems = this.problems.concat(validationResult.problems);
+
 		this.propertiesMatches += validationResult.propertiesMatches;
+
 		this.propertiesValueMatches += validationResult.propertiesValueMatches;
+
 		this.mergeProcessedProperties(validationResult);
 	}
 
@@ -384,6 +440,7 @@ export class ValidationResult {
 		propertyValidationResult: ValidationResult,
 	): void {
 		this.problems = this.problems.concat(propertyValidationResult.problems);
+
 		this.propertiesMatches++;
 
 		if (
@@ -393,6 +450,7 @@ export class ValidationResult {
 		) {
 			this.propertiesValueMatches++;
 		}
+
 		if (
 			propertyValidationResult.enumValueMatch &&
 			propertyValidationResult.enumValues &&
@@ -414,15 +472,19 @@ export class ValidationResult {
 		if (hasProblems !== other.hasProblems()) {
 			return hasProblems ? -1 : 1;
 		}
+
 		if (this.enumValueMatch !== other.enumValueMatch) {
 			return other.enumValueMatch ? -1 : 1;
 		}
+
 		if (this.primaryValueMatches !== other.primaryValueMatches) {
 			return this.primaryValueMatches - other.primaryValueMatches;
 		}
+
 		if (this.propertiesValueMatches !== other.propertiesValueMatches) {
 			return this.propertiesValueMatches - other.propertiesValueMatches;
 		}
+
 		return this.propertiesMatches - other.propertiesMatches;
 	}
 }
@@ -466,6 +528,7 @@ export class JSONDocument {
 				Json.findNodeAtOffset(this.root, offset, includeRightBound)
 			);
 		}
+
 		return undefined;
 	}
 
@@ -481,6 +544,7 @@ export class JSONDocument {
 						ctn = doVisit(children[i]);
 					}
 				}
+
 				return ctn;
 			};
 
@@ -496,6 +560,7 @@ export class JSONDocument {
 	): Diagnostic[] | undefined {
 		if (this.root && schema) {
 			const validationResult = new ValidationResult();
+
 			validate(
 				this.root,
 				schema,
@@ -520,6 +585,7 @@ export class JSONDocument {
 				);
 			});
 		}
+
 		return undefined;
 	}
 
@@ -534,6 +600,7 @@ export class JSONDocument {
 			const schemaDraft = getSchemaDraft(schema);
 
 			const context = new EvaluationContext(schemaDraft);
+
 			validate(
 				this.root,
 				schema,
@@ -544,6 +611,7 @@ export class JSONDocument {
 
 			return matchingSchemas.schemas;
 		}
+
 		return [];
 	}
 }
@@ -553,6 +621,7 @@ function getSchemaDraft(schema: JSONSchema, fallBack = SchemaDraft.v2020_12) {
 	if (schemaId) {
 		return schemaDraftFromId[schemaId] ?? fallBack;
 	}
+
 	return fallBack;
 }
 
@@ -566,6 +635,7 @@ function validate(
 	if (!n || !matchingSchemas.include(n)) {
 		return;
 	}
+
 	if (n.type === "property") {
 		return validate(
 			n.valueNode,
@@ -575,7 +645,9 @@ function validate(
 			context,
 		);
 	}
+
 	const node = n;
+
 	_validateNode();
 
 	switch (node.type) {
@@ -632,11 +704,13 @@ function validate(
 				});
 			}
 		}
+
 		if (Array.isArray(schema.allOf)) {
 			for (const subSchemaRef of schema.allOf) {
 				const subValidationResult = new ValidationResult();
 
 				const subMatchingSchemas = matchingSchemas.newSub();
+
 				validate(
 					node,
 					asSchema(subSchemaRef),
@@ -644,16 +718,20 @@ function validate(
 					subMatchingSchemas,
 					context,
 				);
+
 				validationResult.merge(subValidationResult);
+
 				matchingSchemas.merge(subMatchingSchemas);
 			}
 		}
+
 		const notSchema = asSchema(schema.not);
 
 		if (notSchema) {
 			const subValidationResult = new ValidationResult();
 
 			const subMatchingSchemas = matchingSchemas.newSub();
+
 			validate(
 				node,
 				notSchema,
@@ -670,8 +748,10 @@ function validate(
 						l10n.t("Matches a schema that is not allowed."),
 				});
 			}
+
 			for (const ms of subMatchingSchemas.schemas) {
 				ms.inverted = !ms.inverted;
+
 				matchingSchemas.add(ms);
 			}
 		}
@@ -686,7 +766,9 @@ function validate(
 			let bestMatch:
 				| {
 						schema: JSONSchema;
+
 						validationResult: ValidationResult;
+
 						matchingSchemas: ISchemaCollector;
 				  }
 				| undefined = undefined;
@@ -697,6 +779,7 @@ function validate(
 				const subValidationResult = new ValidationResult();
 
 				const subMatchingSchemas = matchingSchemas.newSub();
+
 				validate(
 					node,
 					subSchema,
@@ -708,6 +791,7 @@ function validate(
 				if (!subValidationResult.hasProblems()) {
 					matches.push(subSchema);
 				}
+
 				if (!bestMatch) {
 					bestMatch = {
 						schema: subSchema,
@@ -722,10 +806,13 @@ function validate(
 					) {
 						// no errors, both are equally good matches
 						bestMatch.matchingSchemas.merge(subMatchingSchemas);
+
 						bestMatch.validationResult.propertiesMatches +=
 							subValidationResult.propertiesMatches;
+
 						bestMatch.validationResult.propertiesValueMatches +=
 							subValidationResult.propertiesValueMatches;
+
 						bestMatch.validationResult.mergeProcessedProperties(
 							subValidationResult,
 						);
@@ -744,6 +831,7 @@ function validate(
 						} else if (compareResult === 0) {
 							// there's already a best matching but we are as good
 							bestMatch.matchingSchemas.merge(subMatchingSchemas);
+
 							bestMatch.validationResult.mergeEnumValues(
 								subValidationResult,
 							);
@@ -760,16 +848,20 @@ function validate(
 					),
 				});
 			}
+
 			if (bestMatch) {
 				validationResult.merge(bestMatch.validationResult);
+
 				matchingSchemas.merge(bestMatch.matchingSchemas);
 			}
+
 			return matches.length;
 		};
 
 		if (Array.isArray(schema.anyOf)) {
 			testAlternatives(schema.anyOf, false);
 		}
+
 		if (Array.isArray(schema.oneOf)) {
 			testAlternatives(schema.oneOf, true);
 		}
@@ -788,6 +880,7 @@ function validate(
 			);
 
 			validationResult.merge(subValidationResult);
+
 			matchingSchemas.merge(subMatchingSchemas);
 		};
 
@@ -809,7 +902,9 @@ function validate(
 				subMatchingSchemas,
 				context,
 			);
+
 			matchingSchemas.merge(subMatchingSchemas);
+
 			validationResult.mergeProcessedProperties(subValidationResult);
 
 			if (!subValidationResult.hasProblems()) {
@@ -843,7 +938,9 @@ function validate(
 					break;
 				}
 			}
+
 			validationResult.enumValues = schema.enum;
+
 			validationResult.enumValueMatch = enumValueMatch;
 
 			if (!enumValueMatch) {
@@ -876,10 +973,12 @@ function validate(
 							JSON.stringify(schema.const),
 						),
 				});
+
 				validationResult.enumValueMatch = false;
 			} else {
 				validationResult.enumValueMatch = true;
 			}
+
 			validationResult.enumValues = [schema.const];
 		}
 
@@ -922,6 +1021,7 @@ function validate(
 				}
 			);
 		}
+
 		if (isNumber(schema.multipleOf)) {
 			let remainder: number = -1;
 
@@ -944,9 +1044,11 @@ function validate(
 					} else {
 						normMultipleOf.value *= multiplier;
 					}
+
 					remainder = normValue.value % normMultipleOf.value;
 				}
 			}
+
 			if (remainder !== 0) {
 				validationResult.problems.push({
 					location: { offset: node.offset, length: node.length },
@@ -957,6 +1059,7 @@ function validate(
 				});
 			}
 		}
+
 		function getExclusiveLimit(
 			limit: number | undefined,
 			exclusive: boolean | number | undefined,
@@ -964,11 +1067,14 @@ function validate(
 			if (isNumber(exclusive)) {
 				return exclusive;
 			}
+
 			if (isBoolean(exclusive) && exclusive) {
 				return limit;
 			}
+
 			return undefined;
 		}
+
 		function getLimit(
 			limit: number | undefined,
 			exclusive: boolean | number | undefined,
@@ -976,8 +1082,10 @@ function validate(
 			if (!isBoolean(exclusive) || !exclusive) {
 				return limit;
 			}
+
 			return undefined;
 		}
+
 		const exclusiveMinimum = getExclusiveLimit(
 			schema.minimum,
 			schema.exclusiveMinimum,
@@ -992,6 +1100,7 @@ function validate(
 				),
 			});
 		}
+
 		const exclusiveMaximum = getExclusiveLimit(
 			schema.maximum,
 			schema.exclusiveMaximum,
@@ -1006,6 +1115,7 @@ function validate(
 				),
 			});
 		}
+
 		const minimum = getLimit(schema.minimum, schema.exclusiveMinimum);
 
 		if (isNumber(minimum) && val < minimum) {
@@ -1014,6 +1124,7 @@ function validate(
 				message: l10n.t("Value is below the minimum of {0}.", minimum),
 			});
 		}
+
 		const maximum = getLimit(schema.maximum, schema.exclusiveMaximum);
 
 		if (isNumber(maximum) && val > maximum) {
@@ -1091,6 +1202,7 @@ function validate(
 								);
 							}
 						}
+
 						if (errorMessage) {
 							validationResult.problems.push({
 								location: {
@@ -1107,6 +1219,7 @@ function validate(
 							});
 						}
 					}
+
 					break;
 
 				case "color-hex":
@@ -1131,10 +1244,12 @@ function validate(
 								format.errorMessage,
 						});
 					}
+
 				default:
 			}
 		}
 	}
+
 	function _validateArrayNode(node: ArrayASTNode): void {
 		let prefixItemsSchemas: JSONSchemaRef[] | undefined;
 
@@ -1142,6 +1257,7 @@ function validate(
 
 		if (context.schemaDraft >= SchemaDraft.v2020_12) {
 			prefixItemsSchemas = schema.prefixItems;
+
 			additionalItemSchema = !Array.isArray(schema.items)
 				? schema.items
 				: undefined;
@@ -1149,10 +1265,12 @@ function validate(
 			prefixItemsSchemas = Array.isArray(schema.items)
 				? schema.items
 				: undefined;
+
 			additionalItemSchema = !Array.isArray(schema.items)
 				? schema.items
 				: schema.additionalItems;
 		}
+
 		let index = 0;
 
 		if (prefixItemsSchemas !== undefined) {
@@ -1175,11 +1293,14 @@ function validate(
 						matchingSchemas,
 						context,
 					);
+
 					validationResult.mergePropertyMatch(itemValidationResult);
 				}
+
 				validationResult.processedProperties.add(String(index));
 			}
 		}
+
 		if (additionalItemSchema !== undefined && index < node.items.length) {
 			if (typeof additionalItemSchema === "boolean") {
 				if (additionalItemSchema === false) {
@@ -1191,13 +1312,16 @@ function validate(
 						),
 					});
 				}
+
 				for (; index < node.items.length; index++) {
 					validationResult.processedProperties.add(String(index));
+
 					validationResult.propertiesValueMatches++;
 				}
 			} else {
 				for (; index < node.items.length; index++) {
 					const itemValidationResult = new ValidationResult();
+
 					validate(
 						node.items[index],
 						additionalItemSchema,
@@ -1205,7 +1329,9 @@ function validate(
 						matchingSchemas,
 						context,
 					);
+
 					validationResult.mergePropertyMatch(itemValidationResult);
+
 					validationResult.processedProperties.add(String(index));
 				}
 			}
@@ -1220,6 +1346,7 @@ function validate(
 				const item = node.items[index];
 
 				const itemValidationResult = new ValidationResult();
+
 				validate(
 					item,
 					containsSchema,
@@ -1236,6 +1363,7 @@ function validate(
 					}
 				}
 			}
+
 			if (containsCount === 0 && !isNumber(schema.minContains)) {
 				validationResult.problems.push({
 					location: { offset: node.offset, length: node.length },
@@ -1244,6 +1372,7 @@ function validate(
 						l10n.t("Array does not contain required item."),
 				});
 			}
+
 			if (
 				isNumber(schema.minContains) &&
 				containsCount < schema.minContains
@@ -1258,6 +1387,7 @@ function validate(
 						),
 				});
 			}
+
 			if (
 				isNumber(schema.maxContains) &&
 				containsCount > schema.maxContains
@@ -1291,6 +1421,7 @@ function validate(
 						});
 					} else {
 						const itemValidationResult = new ValidationResult();
+
 						validate(
 							node.items[i],
 							<any>schema.unevaluatedItems,
@@ -1298,12 +1429,15 @@ function validate(
 							matchingSchemas,
 							context,
 						);
+
 						validationResult.mergePropertyMatch(
 							itemValidationResult,
 						);
 					}
 				}
+
 				validationResult.processedProperties.add(String(i));
+
 				validationResult.propertiesValueMatches++;
 			}
 		}
@@ -1341,8 +1475,10 @@ function validate(
 						}
 					}
 				}
+
 				return false;
 			}
+
 			if (hasDuplicates()) {
 				validationResult.problems.push({
 					location: { offset: node.offset, length: node.length },
@@ -1360,7 +1496,9 @@ function validate(
 
 		for (const propertyNode of node.properties) {
 			const key = propertyNode.keyNode.value;
+
 			seenKeys[key] = propertyNode.valueNode;
+
 			unprocessedProperties.add(key);
 		}
 
@@ -1375,6 +1513,7 @@ function validate(
 					const location = keyNode
 						? { offset: keyNode.offset, length: keyNode.length }
 						: { offset: node.offset, length: 1 };
+
 					validationResult.problems.push({
 						location: location,
 						message: l10n.t(
@@ -1388,6 +1527,7 @@ function validate(
 
 		const propertyProcessed = (prop: string) => {
 			unprocessedProperties.delete(prop);
+
 			validationResult.processedProperties.add(prop);
 		};
 
@@ -1403,6 +1543,7 @@ function validate(
 					if (isBoolean(propertySchema)) {
 						if (!propertySchema) {
 							const propertyNode = <PropertyASTNode>child.parent;
+
 							validationResult.problems.push({
 								location: {
 									offset: propertyNode.keyNode.offset,
@@ -1417,10 +1558,12 @@ function validate(
 							});
 						} else {
 							validationResult.propertiesMatches++;
+
 							validationResult.propertiesValueMatches++;
 						}
 					} else {
 						const propertyValidationResult = new ValidationResult();
+
 						validate(
 							child,
 							propertySchema,
@@ -1428,6 +1571,7 @@ function validate(
 							matchingSchemas,
 							context,
 						);
+
 						validationResult.mergePropertyMatch(
 							propertyValidationResult,
 						);
@@ -1460,6 +1604,7 @@ function validate(
 										const propertyNode = <PropertyASTNode>(
 											child.parent
 										);
+
 										validationResult.problems.push({
 											location: {
 												offset: propertyNode.keyNode
@@ -1476,11 +1621,13 @@ function validate(
 										});
 									} else {
 										validationResult.propertiesMatches++;
+
 										validationResult.propertiesValueMatches++;
 									}
 								} else {
 									const propertyValidationResult =
 										new ValidationResult();
+
 									validate(
 										child,
 										propertySchema,
@@ -1488,6 +1635,7 @@ function validate(
 										matchingSchemas,
 										context,
 									);
+
 									validationResult.mergePropertyMatch(
 										propertyValidationResult,
 									);
@@ -1495,6 +1643,7 @@ function validate(
 							}
 						}
 					}
+
 					processed.forEach(propertyProcessed);
 				}
 			}
@@ -1526,6 +1675,7 @@ function validate(
 						});
 					} else if (additionalProperties !== true) {
 						const propertyValidationResult = new ValidationResult();
+
 						validate(
 							child,
 							additionalProperties,
@@ -1533,6 +1683,7 @@ function validate(
 							matchingSchemas,
 							context,
 						);
+
 						validationResult.mergePropertyMatch(
 							propertyValidationResult,
 						);
@@ -1540,6 +1691,7 @@ function validate(
 				}
 			}
 		}
+
 		const unevaluatedProperties = schema.unevaluatedProperties;
 
 		if (unevaluatedProperties !== undefined) {
@@ -1570,6 +1722,7 @@ function validate(
 						} else if (unevaluatedProperties !== true) {
 							const propertyValidationResult =
 								new ValidationResult();
+
 							validate(
 								child,
 								unevaluatedProperties,
@@ -1577,6 +1730,7 @@ function validate(
 								matchingSchemas,
 								context,
 							);
+
 							validationResult.mergePropertyMatch(
 								propertyValidationResult,
 							);
@@ -1584,6 +1738,7 @@ function validate(
 					}
 				}
 			}
+
 			processed.forEach(propertyProcessed);
 		}
 
@@ -1622,6 +1777,7 @@ function validate(
 				}
 			}
 		}
+
 		if (schema.dependentSchemas) {
 			for (const key in schema.dependentSchemas) {
 				const prop = seenKeys[key];
@@ -1692,6 +1848,7 @@ function validate(
 
 				if (propertySchema) {
 					const propertyValidationResult = new ValidationResult();
+
 					validate(
 						node,
 						propertySchema,
@@ -1699,6 +1856,7 @@ function validate(
 						matchingSchemas,
 						context,
 					);
+
 					validationResult.mergePropertyMatch(
 						propertyValidationResult,
 					);
@@ -1726,6 +1884,7 @@ export function parse(
 	function _scanNext(): Json.SyntaxKind {
 		while (true) {
 			const token = scanner.scan();
+
 			_checkScanError();
 
 			switch (token) {
@@ -1744,6 +1903,7 @@ export function parse(
 							),
 						);
 					}
+
 					break;
 
 				case Json.SyntaxKind.Trivia:
@@ -1762,6 +1922,7 @@ export function parse(
 
 			return true;
 		}
+
 		return false;
 	}
 
@@ -1777,6 +1938,7 @@ export function parse(
 				textDocument.positionAt(startOffset),
 				textDocument.positionAt(endOffset),
 			);
+
 			problems.push(
 				Diagnostic.create(
 					range,
@@ -1786,6 +1948,7 @@ export function parse(
 					textDocument.languageId,
 				),
 			);
+
 			lastProblemOffset = startOffset;
 		}
 	}
@@ -1807,13 +1970,16 @@ export function parse(
 			while (start > 0 && /\s/.test(text.charAt(start))) {
 				start--;
 			}
+
 			end = start + 1;
 		}
+
 		_errorAtRange(message, code, start, end);
 
 		if (node) {
 			_finalize(node, false);
 		}
+
 		if (skipUntilAfter.length + skipUntil.length > 0) {
 			let token = scanner.getToken();
 
@@ -1825,9 +1991,11 @@ export function parse(
 				} else if (skipUntil.indexOf(token) !== -1) {
 					break;
 				}
+
 				token = _scanNext();
 			}
 		}
+
 		return node;
 	}
 
@@ -1883,6 +2051,7 @@ export function parse(
 
 				return true;
 		}
+
 		return false;
 	}
 
@@ -1903,7 +2072,9 @@ export function parse(
 		if (scanner.getToken() !== Json.SyntaxKind.OpenBracketToken) {
 			return undefined;
 		}
+
 		const node = new ArrayASTNodeImpl(parent, scanner.getTokenOffset());
+
 		_scanNext(); // consume OpenBracketToken
 
 		const count = 0;
@@ -1918,7 +2089,9 @@ export function parse(
 				if (!needsComma) {
 					_error(l10n.t("Value expected"), ErrorCode.ValueExpected);
 				}
+
 				const commaOffset = scanner.getTokenOffset();
+
 				_scanNext(); // consume comma
 				if (scanner.getToken() === Json.SyntaxKind.CloseBracketToken) {
 					if (needsComma) {
@@ -1929,11 +2102,13 @@ export function parse(
 							commaOffset + 1,
 						);
 					}
+
 					continue;
 				}
 			} else if (needsComma) {
 				_error(l10n.t("Expected comma"), ErrorCode.CommaExpected);
 			}
+
 			const item = _parseValue(node);
 
 			if (!item) {
@@ -1950,6 +2125,7 @@ export function parse(
 			} else {
 				node.items.push(item);
 			}
+
 			needsComma = true;
 		}
 
@@ -1991,13 +2167,17 @@ export function parse(
 					scanner.getTokenOffset(),
 					scanner.getTokenLength(),
 				);
+
 				keyNode.value = scanner.getTokenValue();
+
 				key = keyNode;
+
 				_scanNext(); // consume Unknown
 			} else {
 				return undefined;
 			}
 		}
+
 		node.keyNode = key;
 
 		// For JSON files that forbid code comments, there is a convention to use the key name "//" to add comments.
@@ -2023,6 +2203,7 @@ export function parse(
 						DiagnosticSeverity.Warning,
 					);
 				}
+
 				keysSeen[key.value] = true; // if the same key is duplicate again, avoid duplicate error reporting
 			} else {
 				keysSeen[key.value] = node;
@@ -2031,6 +2212,7 @@ export function parse(
 
 		if (scanner.getToken() === Json.SyntaxKind.ColonToken) {
 			node.colonOffset = scanner.getTokenOffset();
+
 			_scanNext(); // consume ColonToken
 		} else {
 			_error(l10n.t("Colon expected"), ErrorCode.ColonExpected);
@@ -2045,6 +2227,7 @@ export function parse(
 				return node;
 			}
 		}
+
 		const value = _parseValue(node);
 
 		if (!value) {
@@ -2056,7 +2239,9 @@ export function parse(
 				[Json.SyntaxKind.CloseBraceToken, Json.SyntaxKind.CommaToken],
 			);
 		}
+
 		node.valueNode = value;
+
 		node.length = value.offset + value.length - node.offset;
 
 		return node;
@@ -2068,9 +2253,11 @@ export function parse(
 		if (scanner.getToken() !== Json.SyntaxKind.OpenBraceToken) {
 			return undefined;
 		}
+
 		const node = new ObjectASTNodeImpl(parent, scanner.getTokenOffset());
 
 		const keysSeen: any = Object.create(null);
+
 		_scanNext(); // consume OpenBraceToken
 		let needsComma = false;
 
@@ -2085,7 +2272,9 @@ export function parse(
 						ErrorCode.PropertyExpected,
 					);
 				}
+
 				const commaOffset = scanner.getTokenOffset();
+
 				_scanNext(); // consume comma
 				if (scanner.getToken() === Json.SyntaxKind.CloseBraceToken) {
 					if (needsComma) {
@@ -2096,11 +2285,13 @@ export function parse(
 							commaOffset + 1,
 						);
 					}
+
 					continue;
 				}
 			} else if (needsComma) {
 				_error(l10n.t("Expected comma"), ErrorCode.CommaExpected);
 			}
+
 			const property = _parseProperty(node, keysSeen);
 
 			if (!property) {
@@ -2117,6 +2308,7 @@ export function parse(
 			} else {
 				node.properties.push(property);
 			}
+
 			needsComma = true;
 		}
 
@@ -2127,6 +2319,7 @@ export function parse(
 				node,
 			);
 		}
+
 		return _finalize(node, true);
 	}
 
@@ -2138,6 +2331,7 @@ export function parse(
 		}
 
 		const node = new StringASTNodeImpl(parent, scanner.getTokenOffset());
+
 		node.value = scanner.getTokenValue();
 
 		return _finalize(node, true);
@@ -2165,6 +2359,7 @@ export function parse(
 						node,
 					);
 				}
+
 				node.value = numberValue;
 			} catch (e) {
 				return _error(
@@ -2173,8 +2368,10 @@ export function parse(
 					node,
 				);
 			}
+
 			node.isInteger = tokenValue.indexOf(".") === -1;
 		}
+
 		return _finalize(node, true);
 	}
 
@@ -2239,5 +2436,6 @@ export function parse(
 			_error(l10n.t("End of file expected."), ErrorCode.Undefined);
 		}
 	}
+
 	return new JSONDocument(_root, problems, commentRanges);
 }

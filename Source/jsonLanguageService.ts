@@ -68,11 +68,14 @@ export interface LanguageService {
 		documentSettings?: DocumentLanguageSettings,
 		schema?: JSONSchema,
 	): PromiseLike<Diagnostic[]>;
+
 	parseJSONDocument(document: TextDocument): JSONDocument;
+
 	newJSONDocument(
 		rootNode: ASTNode,
 		syntaxDiagnostics?: Diagnostic[],
 	): JSONDocument;
+
 	resetSchema(uri: string): boolean;
 
 	getMatchingSchemas(
@@ -93,16 +96,19 @@ export interface LanguageService {
 		position: Position,
 		doc: JSONDocument,
 	): PromiseLike<CompletionList | null>;
+
 	findDocumentSymbols(
 		document: TextDocument,
 		doc: JSONDocument,
 		context?: DocumentSymbolsContext,
 	): SymbolInformation[];
+
 	findDocumentSymbols2(
 		document: TextDocument,
 		doc: JSONDocument,
 		context?: DocumentSymbolsContext,
 	): DocumentSymbol[];
+
 	findDocumentColors(
 		document: TextDocument,
 		doc: JSONDocument,
@@ -132,11 +138,13 @@ export interface LanguageService {
 		positions: Position[],
 		doc: JSONDocument,
 	): SelectionRange[];
+
 	findDefinition(
 		document: TextDocument,
 		position: Position,
 		doc: JSONDocument,
 	): PromiseLike<DefinitionLink[]>;
+
 	findLinks(
 		document: TextDocument,
 		doc: JSONDocument,
@@ -147,6 +155,7 @@ export interface LanguageService {
 		range: Range,
 		options: FormattingOptions,
 	): TextEdit[];
+
 	sort(document: TextDocument, options: SortOptions): TextEdit[];
 }
 
@@ -160,6 +169,7 @@ export function getLanguageService(
 		params.workspaceContext,
 		promise,
 	);
+
 	jsonSchemaService.setSchemaContributions(schemaContributions);
 
 	const jsonCompletion = new JSONCompletion(
@@ -188,6 +198,7 @@ export function getLanguageService(
 					jsonSchemaService,
 				),
 			);
+
 			jsonValidation.configure(settings);
 		},
 		resetSchema: (uri: string) => jsonSchemaService.onResourceChange(uri),

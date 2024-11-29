@@ -10,23 +10,38 @@ export enum Container {
 
 export class PropertyTree {
 	propertyName: string;
+
 	beginningLineNumber: number | undefined;
+
 	endLineNumber: number | undefined;
+
 	parent: PropertyTree | undefined;
+
 	commaIndex: number | undefined;
+
 	commaLine: number | undefined;
+
 	lineWhereToAddComma: number | undefined;
+
 	indexWhereToAddComa: number | undefined;
+
 	type: Container | undefined;
+
 	childrenProperties: PropertyTree[];
+
 	lastProperty: boolean;
+
 	noKeyName: boolean;
 
 	constructor(propertyName?: string, beginningLineNumber?: number) {
 		this.propertyName = propertyName ?? "";
+
 		this.beginningLineNumber = beginningLineNumber;
+
 		this.childrenProperties = [];
+
 		this.lastProperty = false;
+
 		this.noKeyName = false;
 	}
 
@@ -45,13 +60,16 @@ export class PropertyTree {
 					compareProperties,
 				);
 			}
+
 			if (insertionIndex < 0) {
 				insertionIndex = insertionIndex * -1 - 1;
 			}
+
 			this.childrenProperties.splice(insertionIndex, 0, childProperty);
 		} else {
 			this.childrenProperties.push(childProperty);
 		}
+
 		return childProperty;
 	}
 }
@@ -69,6 +87,7 @@ function compareProperties(
 	} else if (propertyName1 > propertyName2) {
 		return 1;
 	}
+
 	return 0;
 }
 
@@ -90,9 +109,11 @@ function binarySearchOnPropertyArray(
 	if (propertyName < firstPropertyInArrayName) {
 		return 0;
 	}
+
 	if (propertyName > lastPropertyInArrayName) {
 		return propertyTreeArray.length;
 	}
+
 	let m = 0;
 
 	let n = propertyTreeArray.length - 1;
@@ -110,5 +131,6 @@ function binarySearchOnPropertyArray(
 			return k;
 		}
 	}
+
 	return -m - 1;
 }

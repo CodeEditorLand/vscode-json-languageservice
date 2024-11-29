@@ -31,6 +31,7 @@ export function getFoldingRanges(
 
 	function addRange(range: FoldingRange) {
 		ranges.push(range);
+
 		nestingLevels.push(stack.length);
 	}
 
@@ -50,10 +51,12 @@ export function getFoldingRanges(
 							? "object"
 							: "array",
 				};
+
 				stack.push(range);
 
 				break;
 			}
+
 			case SyntaxKind.CloseBraceToken:
 			case SyntaxKind.CloseBracketToken: {
 				const kind =
@@ -72,10 +75,13 @@ export function getFoldingRanges(
 						prevStart !== range.startLine
 					) {
 						range.endLine = line - 1;
+
 						addRange(range);
+
 						prevStart = range.startLine;
 					}
 				}
+
 				break;
 			}
 
@@ -103,9 +109,11 @@ export function getFoldingRanges(
 							endLine,
 							kind: FoldingRangeKind.Comment,
 						});
+
 						prevStart = startLine;
 					}
 				}
+
 				break;
 			}
 
@@ -128,6 +136,7 @@ export function getFoldingRanges(
 							endLine: line,
 							kind: FoldingRangeKind.Region,
 						};
+
 						stack.push(range);
 					} else {
 						let i = stack.length - 1;
@@ -138,8 +147,10 @@ export function getFoldingRanges(
 						) {
 							i--;
 						}
+
 						if (i >= 0) {
 							const range = stack[i];
+
 							stack.length = i;
 
 							if (
@@ -147,22 +158,28 @@ export function getFoldingRanges(
 								prevStart !== range.startLine
 							) {
 								range.endLine = line;
+
 								addRange(range);
+
 								prevStart = range.startLine;
 							}
 						}
 					}
 				}
+
 				break;
 			}
 		}
+
 		token = scanner.scan();
 	}
+
 	const rangeLimit = context && context.rangeLimit;
 
 	if (typeof rangeLimit !== "number" || ranges.length <= rangeLimit) {
 		return ranges;
 	}
+
 	if (context && context.onRangeLimitExceeded) {
 		context.onRangeLimitExceeded(document.uri);
 	}
@@ -174,6 +191,7 @@ export function getFoldingRanges(
 			counts[level] = (counts[level] || 0) + 1;
 		}
 	}
+
 	let entries = 0;
 
 	let maxLevel = 0;
@@ -187,9 +205,11 @@ export function getFoldingRanges(
 
 				break;
 			}
+
 			entries += n;
 		}
 	}
+
 	const result = [];
 
 	for (let i = 0; i < ranges.length; i++) {
@@ -204,5 +224,6 @@ export function getFoldingRanges(
 			}
 		}
 	}
+
 	return result;
 }

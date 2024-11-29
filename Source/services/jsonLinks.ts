@@ -31,12 +31,14 @@ export function findLinks(
 
 			if (targetNode) {
 				const targetPos = document.positionAt(targetNode.offset);
+
 				links.push({
 					target: `${document.uri}#${targetPos.line + 1},${targetPos.character + 1}`,
 					range: createRange(document, node.valueNode),
 				});
 			}
 		}
+
 		return true;
 	});
 
@@ -56,6 +58,7 @@ function findTargetNode(doc: JSONDocument, path: string): ASTNode | null {
 	if (!tokens) {
 		return null;
 	}
+
 	return findNode(tokens, doc.root);
 }
 
@@ -66,6 +69,7 @@ function findNode(
 	if (!node) {
 		return null;
 	}
+
 	if (pointer.length === 0) {
 		return node;
 	}
@@ -80,6 +84,7 @@ function findNode(
 		if (!propertyNode) {
 			return null;
 		}
+
 		return findNode(pointer, propertyNode.valueNode);
 	} else if (node && node.type === "array") {
 		if (token.match(/^(0|[1-9][0-9]*)$/)) {
@@ -90,9 +95,11 @@ function findNode(
 			if (!arrayItem) {
 				return null;
 			}
+
 			return findNode(pointer, arrayItem);
 		}
 	}
+
 	return null;
 }
 

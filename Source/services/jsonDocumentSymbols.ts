@@ -65,11 +65,13 @@ export class JSONDocumentSymbols {
 									document.uri,
 									getRange(document, item),
 								);
+
 								result.push({
 									name: getName(property.valueNode),
 									kind: SymbolKind.Function,
 									location: location,
 								});
+
 								limit--;
 
 								if (limit <= 0) {
@@ -81,12 +83,14 @@ export class JSONDocumentSymbols {
 											resourceString,
 										);
 									}
+
 									return result;
 								}
 							}
 						}
 					}
 				}
+
 				return result;
 			}
 		}
@@ -127,12 +131,14 @@ export class JSONDocumentSymbols {
 							const childContainerName = containerName
 								? containerName + "." + property.keyNode.value
 								: property.keyNode.value;
+
 							result.push({
 								name: this.getKeyLabel(property),
 								kind: this.getSymbolKind(valueNode.type),
 								location: location,
 								containerName: containerName,
 							});
+
 							toVisit.push({
 								node: valueNode,
 								containerName: childContainerName,
@@ -148,12 +154,14 @@ export class JSONDocumentSymbols {
 		// breath first traversal
 		while (nextToVisit < toVisit.length) {
 			const next = toVisit[nextToVisit++];
+
 			collectOutlineEntries(next.node, next.containerName);
 		}
 
 		if (limitExceeded && context && context.onResultLimitExceeded) {
 			context.onResultLimitExceeded(resourceString);
 		}
+
 		return result;
 	}
 
@@ -196,12 +204,14 @@ export class JSONDocumentSymbols {
 									document,
 									property.keyNode,
 								);
+
 								result.push({
 									name: getName(property.valueNode),
 									kind: SymbolKind.Function,
 									range,
 									selectionRange,
 								});
+
 								limit--;
 
 								if (limit <= 0) {
@@ -213,12 +223,14 @@ export class JSONDocumentSymbols {
 											resourceString,
 										);
 									}
+
 									return result;
 								}
 							}
 						}
 					}
 				}
+
 				return result;
 			}
 		}
@@ -256,7 +268,9 @@ export class JSONDocumentSymbols {
 								selectionRange,
 								children: [],
 							};
+
 							result.push(symbol);
+
 							toVisit.push({ result: symbol.children, node });
 						} else {
 							limitExceeded = true;
@@ -288,7 +302,9 @@ export class JSONDocumentSymbols {
 								children,
 								detail: this.getDetail(valueNode),
 							};
+
 							result.push(symbol);
+
 							toVisit.push({ result: children, node: valueNode });
 						} else {
 							limitExceeded = true;
@@ -301,12 +317,14 @@ export class JSONDocumentSymbols {
 		// breath first traversal
 		while (nextToVisit < toVisit.length) {
 			const next = toVisit[nextToVisit++];
+
 			collectOutlineEntries(next.node, next.result);
 		}
 
 		if (limitExceeded && context && context.onResultLimitExceeded) {
 			context.onResultLimitExceeded(resourceString);
 		}
+
 		return result;
 	}
 
@@ -338,9 +356,11 @@ export class JSONDocumentSymbols {
 		if (name) {
 			name = name.replace(/[\n]/g, "↵");
 		}
+
 		if (name && name.trim()) {
 			return name;
 		}
+
 		return `"${name}"`;
 	}
 
@@ -348,6 +368,7 @@ export class JSONDocumentSymbols {
 		if (!node) {
 			return undefined;
 		}
+
 		if (
 			node.type === "boolean" ||
 			node.type === "number" ||
@@ -362,6 +383,7 @@ export class JSONDocumentSymbols {
 				return node.children.length ? undefined : "{}";
 			}
 		}
+
 		return undefined;
 	}
 
@@ -405,9 +427,12 @@ export class JSONDocumentSymbols {
 
 								if (color) {
 									const range = getRange(document, s.node);
+
 									result.push({ color, range });
 								}
+
 								visitedNode[nodeId] = true;
+
 								limit--;
 
 								if (limit <= 0) {
@@ -419,12 +444,14 @@ export class JSONDocumentSymbols {
 											document.uri,
 										);
 									}
+
 									return result;
 								}
 							}
 						}
 					}
 				}
+
 				return result;
 			});
 	}
@@ -454,6 +481,7 @@ export class JSONDocumentSymbols {
 		} else {
 			label = `#${toTwoDigitHex(red256)}${toTwoDigitHex(green256)}${toTwoDigitHex(blue256)}${toTwoDigitHex(Math.round(color.alpha * 255))}`;
 		}
+
 		result.push({
 			label: label,
 			textEdit: TextEdit.replace(range, JSON.stringify(label)),
