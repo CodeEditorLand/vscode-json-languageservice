@@ -413,16 +413,13 @@ export class ValidationResult {
 	}
 
 	public mergeEnumValues(validationResult: ValidationResult): void {
-		if (
-			!this.enumValueMatch &&
-			!validationResult.enumValueMatch &&
-			this.enumValues &&
-			validationResult.enumValues
-		) {
-			this.enumValues = this.enumValues.concat(
-				validationResult.enumValues,
-			);
+		if (!this.enumValueMatch && !validationResult.enumValueMatch && this.enumValues && validationResult.enumValues) {
+			this.enumValues = this.enumValues.concat(validationResult.enumValues);
+		}
+	}
 
+	public updateEnumMismatchProblemMessages(): void {
+		if (!this.enumValueMatch && this.enumValues) {
 			for (const error of this.problems) {
 				if (error.code === ErrorCode.EnumValueMismatch) {
 					error.message = l10n.t(
@@ -850,6 +847,7 @@ function validate(
 			}
 
 			if (bestMatch) {
+				bestMatch.validationResult.updateEnumMismatchProblemMessages();
 				validationResult.merge(bestMatch.validationResult);
 
 				matchingSchemas.merge(bestMatch.matchingSchemas);
