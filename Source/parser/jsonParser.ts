@@ -413,8 +413,15 @@ export class ValidationResult {
 	}
 
 	public mergeEnumValues(validationResult: ValidationResult): void {
-		if (!this.enumValueMatch && !validationResult.enumValueMatch && this.enumValues && validationResult.enumValues) {
-			this.enumValues = this.enumValues.concat(validationResult.enumValues);
+		if (
+			!this.enumValueMatch &&
+			!validationResult.enumValueMatch &&
+			this.enumValues &&
+			validationResult.enumValues
+		) {
+			this.enumValues = this.enumValues.concat(
+				validationResult.enumValues,
+			);
 		}
 	}
 
